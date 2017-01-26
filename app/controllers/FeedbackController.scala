@@ -19,7 +19,7 @@ package controllers
 import java.net.URLEncoder
 import javax.inject.{Inject, Singleton}
 
-import config.AppConfig
+import config.{AppConfig, FrontendAuthConnector}
 import play.api.Logger
 import play.api.http.{Status => HttpStatus}
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -49,7 +49,8 @@ import scala.concurrent.Future
 @Singleton
 class FeedbackController @Inject()(implicit val applicationConfig: AppConfig,
                                    val wsHttp: WSHttp,
-                                   val messagesApi: MessagesApi
+                                   val messagesApi: MessagesApi,
+                                   frontendAuthConnector: FrontendAuthConnector
                                   ) extends FrontendController with Actions with PartialRetriever with I18nSupport {
   override val httpGet = wsHttp
   val httpPost = wsHttp
@@ -74,7 +75,7 @@ class FeedbackController @Inject()(implicit val applicationConfig: AppConfig,
 
   def localSubmitUrl(implicit request: Request[AnyContent]): String = routes.FeedbackController.submit().url
 
-  protected def authConnector: AuthConnector = config.FrontendAuthConnector
+  protected def authConnector: AuthConnector = frontendAuthConnector
 
   protected def loadPartial(url: String)(implicit request: RequestHeader): HtmlPartial = ???
 

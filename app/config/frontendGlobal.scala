@@ -31,39 +31,39 @@ import uk.gov.hmrc.play.frontend.bootstrap.DefaultFrontendGlobal
 import uk.gov.hmrc.play.http.logging.filters.FrontendLoggingFilter
 
 
-object FrontendGlobal
-  extends DefaultFrontendGlobal {
+//object FrontendGlobal
+//  extends DefaultFrontendGlobal {
+//
+//  override val auditConnector = FrontendAuditConnector
+//  override val loggingFilter = LoggingFilter
+//  override val frontendAuditFilter = AuditFilter
+//
+//  override def onStart(app: Application) {
+//    super.onStart(app)
+//    ApplicationCrypto.verifyConfiguration()
+//  }
+//
+//  override def standardErrorTemplate(pageTitle: String, heading: String, message: String)(implicit rh: Request[_]): Html =
+//    views.html.templates.error_template(pageTitle, heading, message)(implicitly, implicitly, new FrontendAppConfig(Play.current.configuration))
+//
+//  override def microserviceMetricsConfig(implicit app: Application): Option[Configuration] = app.configuration.getConfig(s"microservice.metrics")
+//}
 
-  override val auditConnector = FrontendAuditConnector
-  override val loggingFilter = LoggingFilter
-  override val frontendAuditFilter = AuditFilter
+//object ControllerConfiguration extends ControllerConfig {
+//  lazy val controllerConfigs = Play.current.configuration.underlying.as[Config]("controllers")
+//}
 
-  override def onStart(app: Application) {
-    super.onStart(app)
-    ApplicationCrypto.verifyConfiguration()
-  }
+//object LoggingFilter extends FrontendLoggingFilter with MicroserviceFilterSupport {
+//  override def controllerNeedsLogging(controllerName: String) = ControllerConfiguration.paramsForController(controllerName).needsLogging
+//}
 
-  override def standardErrorTemplate(pageTitle: String, heading: String, message: String)(implicit rh: Request[_]): Html =
-    views.html.templates.error_template(pageTitle, heading, message)(implicitly, implicitly, new FrontendAppConfig(Play.current.configuration))
-
-  override def microserviceMetricsConfig(implicit app: Application): Option[Configuration] = app.configuration.getConfig(s"microservice.metrics")
-}
-
-object ControllerConfiguration extends ControllerConfig {
-  lazy val controllerConfigs = Play.current.configuration.underlying.as[Config]("controllers")
-}
-
-object LoggingFilter extends FrontendLoggingFilter with MicroserviceFilterSupport {
-  override def controllerNeedsLogging(controllerName: String) = ControllerConfiguration.paramsForController(controllerName).needsLogging
-}
-
-object AuditFilter extends FrontendAuditFilter with RunMode with AppName with MicroserviceFilterSupport {
-
-  override lazy val maskedFormFields = Seq("password")
-
-  override lazy val applicationPort = None
-
-  override lazy val auditConnector = FrontendAuditConnector
-
-  override def controllerNeedsAuditing(controllerName: String) = ControllerConfiguration.paramsForController(controllerName).needsAuditing
-}
+//object AuditFilter extends FrontendAuditFilter with RunMode with AppName with MicroserviceFilterSupport {
+//
+//  override lazy val maskedFormFields = Seq("password")
+//
+//  override lazy val applicationPort = None
+//
+//  override lazy val auditConnector = FrontendAuditConnector
+//
+//  override def controllerNeedsAuditing(controllerName: String) = ControllerConfiguration.paramsForController(controllerName).needsAuditing
+//}

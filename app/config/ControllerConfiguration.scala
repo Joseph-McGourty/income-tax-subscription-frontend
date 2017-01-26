@@ -16,13 +16,13 @@
 
 package config
 
-import javax.inject._
+import javax.inject.{Inject, Singleton}
 
-import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
+import com.typesafe.config.Config
+import play.api.Configuration
+import uk.gov.hmrc.play.config.ControllerConfig
 
 @Singleton
-class BaseControllerConfig @Inject()(val frontendAuthConnector: FrontendAuthConnector,
-                                     val applicationConfig: AppConfig) {
-  lazy val authConnector: AuthConnector = frontendAuthConnector
-  lazy val postSignInRedirectUrl: String = applicationConfig.ggSignInContinueUrl
+class ControllerConfiguration @Inject()(configuration: Configuration) extends ControllerConfig {
+  lazy val controllerConfigs :Config = configuration.underlying.getConfig("controllers")
 }

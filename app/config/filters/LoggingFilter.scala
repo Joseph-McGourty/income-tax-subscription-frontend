@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package config
+package config.filters
 
-import javax.inject._
+import javax.inject.{Inject, Singleton}
 
-import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
+import config.ControllerConfiguration
+import uk.gov.hmrc.play.filters.MicroserviceFilterSupport
+import uk.gov.hmrc.play.http.logging.filters.FrontendLoggingFilter
 
 @Singleton
-class BaseControllerConfig @Inject()(val frontendAuthConnector: FrontendAuthConnector,
-                                     val applicationConfig: AppConfig) {
-  lazy val authConnector: AuthConnector = frontendAuthConnector
-  lazy val postSignInRedirectUrl: String = applicationConfig.ggSignInContinueUrl
+class LoggingFilter @Inject()(config: ControllerConfiguration) extends FrontendLoggingFilter with MicroserviceFilterSupport {
+  override def controllerNeedsLogging(controllerName: String) = config.paramsForController(controllerName).needsLogging
 }

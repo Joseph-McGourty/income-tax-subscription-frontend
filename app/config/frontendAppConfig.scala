@@ -18,6 +18,7 @@ package config
 
 import javax.inject.{Inject, Singleton}
 
+import config.bootstrap.GlobalModule
 import play.api.Configuration
 import uk.gov.hmrc.play.config.ServicesConfig
 
@@ -38,7 +39,8 @@ trait AppConfig {
 }
 
 @Singleton
-class FrontendAppConfig @Inject()(configuration: Configuration) extends AppConfig with ServicesConfig {
+class FrontendAppConfig @Inject()(globalModule: GlobalModule,
+                                  configuration: Configuration) extends AppConfig with ServicesConfig {
 
   private def loadConfig(key: String) = configuration.getString(key).getOrElse(throw new Exception(s"Missing configuration key: $key"))
 
