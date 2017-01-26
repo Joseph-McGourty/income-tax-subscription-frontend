@@ -32,23 +32,21 @@ import scala.util.matching.Regex
 class GlobalModule @Inject()(val application: Application,
                              val configuration: Configuration,
                              val auditConnector: AuditConnector
-                             )
+                            )
 //  extends FrontendFilters
 //  with GraphiteConfig
 //  with RemovingOfTrailingSlashes
 //  with Routing.BlockingOfPaths
 //  with ErrorAuditingSettings
 //  with ShowErrorPage
-//  with MicroserviceFilterSupport
 {
   lazy val appName = configuration.getString("appName").getOrElse("APP NAME NOT SET")
   lazy val enableSecurityHeaderFilter = configuration.getBoolean("security.headers.filter.enabled").getOrElse(true)
-  val deviceIdFilter = DeviceIdCookieFilter(appName, auditConnector)
+  lazy val deviceIdFilter = DeviceIdCookieFilter(appName, auditConnector)
   lazy val loggerDateFormat: Option[String] = configuration.getString("logger.json.dateformat")
 
   def blockedPathPattern: Option[Regex] = None
 
-  //  super.onStart(app)
   Logger.info(s"Starting frontend : $appName : in mode : ${application.mode}")
   MDC.put("appName", appName)
   loggerDateFormat.foreach(str => MDC.put("logger.json.dateformat", str))
