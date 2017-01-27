@@ -18,6 +18,7 @@ package config.bootstrap
 
 import javax.inject.{Inject, Singleton}
 
+import config.graphite.Graphite
 import org.slf4j.MDC
 import play.Logger
 import play.api.{Application, Configuration}
@@ -30,6 +31,7 @@ import scala.util.matching.Regex
 
 @Singleton
 class GlobalModule @Inject()(val application: Application,
+                             val graphite: Graphite,
                              val configuration: Configuration,
                              val auditConnector: AuditConnector
                             )

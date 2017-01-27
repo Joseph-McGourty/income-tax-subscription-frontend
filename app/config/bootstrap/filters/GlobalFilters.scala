@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package config.filters
+package config.bootstrap.filters
 
 import javax.inject.{Inject, Singleton}
 

@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-package config.filters
+package config.graphite
 
 import javax.inject.{Inject, Singleton}
 
-import config.ControllerConfiguration
-import uk.gov.hmrc.play.filters.MicroserviceFilterSupport
-import uk.gov.hmrc.play.http.logging.filters.FrontendLoggingFilter
+import play.api.inject.ApplicationLifecycle
+import play.api.{Application, Configuration}
+import uk.gov.hmrc.play.graphite.GraphiteConfig
+
+import scala.concurrent.Future
 
 @Singleton
-class LoggingFilter @Inject()(config: ControllerConfiguration) extends FrontendLoggingFilter with MicroserviceFilterSupport {
-  override def controllerNeedsLogging(controllerName: String) = config.paramsForController(controllerName).needsLogging
+class Graphite @Inject()(app: Application, lifecycle: ApplicationLifecycle) extends GraphiteConfig {
+  override def microserviceMetricsConfig(implicit app: Application): Option[Configuration] = app.configuration.getConfig(s"microservice.metrics")
+
+  lifecycle.addStopHook {
+    () => Future.successful(onStop(app))
+  }
+
+  onStart(app)
 }
