@@ -14,5 +14,8 @@ GET        /report-quarterly/income-and-expenses/sign-up/test-only/auth-update  
 GET        /report-quarterly/income-and-expenses/sign-up/test-only/reset-throttle           testonly.controllers.ResetThrottleController.resetThrottle
 
 
+GET        /report-quarterly/income-and-expenses/sign-up/test-only/cred-id                  testonly.controllers.CredController.show
+
+
 # Add all the application routes to the prod.routes file
-->         /                                                                    prod.Routes
+->         /                                                                                prod.Routes

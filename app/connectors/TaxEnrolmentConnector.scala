@@ -19,7 +19,6 @@ package connectors
 import javax.inject.{Inject, Singleton}
 
 import audit.Logging
-import auth.IncomeTaxSAUser
 import config.AppConfig
 import connectors.models.Enrolment
 import play.api.http.Status.OK
@@ -35,23 +34,23 @@ class TaxEnrolmentConnector @Inject()(appConfig: AppConfig,
                                       val http: HttpGet,
                                       logging: Logging) extends RawResponseReads {
 
-  def loadAuthority()(implicit hc: HeaderCarrier, r: Reads[R]): Future[R] = {
+  def loadAuthority()(implicit hc: HeaderCarrier, r: Reads[AuthResponse]): Future[AuthResponse] = {
     http.GET[HttpResponse](s"${appConfig.authUrl}/auth/authority").map {
       response =>
         response.status match {
           case OK =>
-            response.json.as[R]
+            response.json.as[AuthResponse]
           case _ =>
             throw new RuntimeException(s"status=${response.status}\nbody=${response.body}")
         }
     }
   }
 
-  def getTaxEnrolment()(implicit hc: HeaderCarrier, r: Reads[R]): Future[Option[Seq[Enrolment]]] = {
+  def getTaxEnrolment()(implicit hc: HeaderCarrier, r: Reads[AuthResponse]): Future[Option[Seq[Enrolment]]] = {
     //    val credId = user.authContext.enrolmentsUri.get
     loadAuthority().flatMap {
-      case R(credId) =>
-        val getUrl = s"${appConfig.taxEnrolments}/users/$credId/enrolments"
+      case AuthResponse(credId) =>
+        val getUrl = s"${appConfig.taxEnrolmentsUrl}/users/$credId/enrolments"
         lazy val requestDetails: Map[String, String] = Map("credId" -> credId)
         logging.debug(s"TaxEnrolmentConnector.getTaxEnrolment Request:\n$requestDetails")
         http.GET[HttpResponse](getUrl).map {
@@ -62,8 +61,6 @@ class TaxEnrolmentConnector @Inject()(appConfig: AppConfig,
                 response.json.as[Seq[Enrolment]]
               case _ =>
                 logging.warn("Get Tax enrolment responded with a unexpected error")
-                throw new RuntimeException(s"status=${response.status}\nbody=${response.body}")
-
                 None
             }
         }
@@ -72,8 +69,8 @@ class TaxEnrolmentConnector @Inject()(appConfig: AppConfig,
 
 }
 
-case class R(credId: String)
+case class AuthResponse(credId: String)
 
-object R {
-  implicit val format = Json.format[R]
+object AuthResponse {
+  implicit val format = Json.format[AuthResponse]
 }
