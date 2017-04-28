@@ -50,6 +50,7 @@ trait AppConfig {
   val ipExclusionList: Seq[Call]
   val shutterPage: String
   val enableCheckSubscription: Boolean
+  val taxEnrolments: String
 }
 
 @Singleton
@@ -118,6 +119,8 @@ class FrontendAppConfig @Inject()(val app: Application) extends AppConfig with S
 
   // Enable or disable calling check already subscribed from the HomeController
   override lazy val enableCheckSubscription: Boolean = loadConfig("feature-switch.enable-check-subscription").toBoolean
+
+  override lazy val taxEnrolments: String = loadConfig("tax-enrolments.url")
 
 }
 
