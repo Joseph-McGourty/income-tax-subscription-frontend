@@ -47,20 +47,21 @@ class TaxEnrolmentConnector @Inject()(appConfig: AppConfig,
   }
 
   def getTaxEnrolment()(implicit hc: HeaderCarrier, r: Reads[AuthResponse]): Future[Option[Seq[Enrolment]]] = {
+    val mhc = hc.withExtraHeaders("True-Client-IP" -> "ITSA-AGENT")
     //    val credId = user.authContext.enrolmentsUri.get
-    loadAuthority().flatMap {
+    loadAuthority()(mhc, implicitly).flatMap {
       case AuthResponse(credId) =>
         val getUrl = s"${appConfig.taxEnrolmentsUrl}/users/$credId/enrolments"
         lazy val requestDetails: Map[String, String] = Map("credId" -> credId)
         logging.debug(s"TaxEnrolmentConnector.getTaxEnrolment Request:\n$requestDetails")
-        http.GET[HttpResponse](getUrl).map {
+        http.GET[HttpResponse](getUrl)(implicitly, mhc).map {
           response =>
             response.status match {
               case OK =>
                 logging.debug(s"TaxEnrolmentConnector.getTaxEnrolment Response:\n${response.body}")
                 response.json.as[Seq[Enrolment]]
               case _ =>
-                logging.warn("Get Tax enrolment responded with a unexpected error")
+                logging.warn(s"Get Tax enrolment responded with a unexpected error\n${response.body}")
                 None
             }
         }

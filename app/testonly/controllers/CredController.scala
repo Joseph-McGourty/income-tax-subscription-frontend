@@ -32,7 +32,8 @@ class CredController @Inject()(val baseConfig: BaseControllerConfig,
   def show() =  Action.async {
     implicit request =>
     conn.getTaxEnrolment().map{
-      x => Ok(x.fold("")(es => es.toString()))
+      x => Ok(x.fold("No enrolments found")(es => es.toString()))
     }
   }
+
 }
