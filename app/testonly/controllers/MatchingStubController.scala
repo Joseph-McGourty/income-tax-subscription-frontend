@@ -53,7 +53,7 @@ class MatchingStubController @Inject()(override val baseConfig: BaseControllerCo
       formWithErrors => BadRequest(view(formWithErrors)),
       clientDetails =>
         matchingStubConnector.newUser(clientDetails) map {
-          _ => Ok(testonly.views.html.show_stubbed_details(clientDetails)).withSession("True-Client-IP" -> "ITSA")
+          _ => Ok(testonly.views.html.show_stubbed_details(clientDetails))
         }
     )
   }

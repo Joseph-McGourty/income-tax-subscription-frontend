@@ -23,6 +23,7 @@ import config.AppConfig
 import connectors.models.Enrolment
 import play.api.http.Status.OK
 import play.api.libs.json.{Json, Reads}
+import testonly.connectors.MatchingStubConstants
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpResponse}
 import utils.Implicits._
 
@@ -47,7 +48,7 @@ class TaxEnrolmentConnector @Inject()(appConfig: AppConfig,
   }
 
   def getTaxEnrolment()(implicit hc: HeaderCarrier, r: Reads[AuthResponse]): Future[Option[Seq[Enrolment]]] = {
-    val mhc = hc.withExtraHeaders("True-Client-IP" -> "ITSA-AGENT")
+    val mhc = hc.withExtraHeaders("True-Client-IP" -> MatchingStubConstants.testId)
     //    val credId = user.authContext.enrolmentsUri.get
     loadAuthority()(mhc, implicitly).flatMap {
       case AuthResponse(credId) =>
