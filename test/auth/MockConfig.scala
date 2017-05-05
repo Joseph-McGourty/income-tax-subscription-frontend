@@ -48,6 +48,7 @@ trait MockConfig extends AppConfig {
   override val ipExclusionList: Seq[Call] = Nil
   override val enableCheckSubscription: Boolean = true
   override val taxEnrolmentsUrl: String = ""
+  override val hasEnabledTestOnlyRoutes = false
 }
 
 object MockConfig extends MockConfig

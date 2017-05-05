@@ -24,7 +24,7 @@ import connectors.models.Enrolment
 import play.api.http.Status.OK
 import play.api.libs.json.{Json, Reads}
 import testonly.connectors.MatchingStubConstants
-import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpResponse}
+import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpResponse, InternalServerException}
 import utils.Implicits._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -42,14 +42,24 @@ class TaxEnrolmentConnector @Inject()(appConfig: AppConfig,
           case OK =>
             response.json.as[AuthResponse]
           case _ =>
-            throw new RuntimeException(s"status=${response.status}\nbody=${response.body}")
+            throw new InternalServerException(s"TaxEnrolmentConnector.loadAuthority returned unexpected result: status=${response.status}\nbody=${response.body}")
         }
     }
   }
 
+  /* N.B. this is header update is to be used in conjunction with the test only route
+  *  MatchingStubController
+  *  the True-Client-IP must match the testId in in testonly.connectors.Request sent
+  *  The hc must not be edited in production
+  */
+  def amendHCForTest(implicit hc: HeaderCarrier): HeaderCarrier =
+    appConfig.hasEnabledTestOnlyRoutes match {
+      case true => hc.withExtraHeaders("True-Client-IP" -> MatchingStubConstants.testId)
+      case false => hc
+    }
+
   def getTaxEnrolment()(implicit hc: HeaderCarrier, r: Reads[AuthResponse]): Future[Option[Seq[Enrolment]]] = {
-    val mhc = hc.withExtraHeaders("True-Client-IP" -> MatchingStubConstants.testId)
-    //    val credId = user.authContext.enrolmentsUri.get
+    val mhc = amendHCForTest
     loadAuthority()(mhc, implicitly).flatMap {
       case AuthResponse(credId) =>
         val getUrl = s"${appConfig.taxEnrolmentsUrl}/users/$credId/enrolments"

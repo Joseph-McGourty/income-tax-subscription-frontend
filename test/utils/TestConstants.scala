@@ -28,4 +28,7 @@ object TestConstants {
   lazy val startDate = DateModel("05", "04", "2017")
   lazy val endDate = DateModel("04", "04", "2018")
   lazy val ggServiceName = "HMRC-MTD-IT"
+  lazy val testUTR: String = new Generator().nextAtedUtr.utr
+  // n.b. the cred id can be any random value
+  lazy val testCredId: String = new Generator().nextAtedUtr.utr
 }

@@ -24,8 +24,7 @@ import uk.gov.hmrc.play.audit.http.connector.{AuditConnector => Auditing}
 import uk.gov.hmrc.play.config.{AppName, RunMode, ServicesConfig}
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.frontend.filters.SessionCookieCryptoFilter
-import uk.gov.hmrc.play.http.HeaderCarrier
-import uk.gov.hmrc.play.partials.{HeaderCarrierForPartials, HeaderCarrierForPartialsConverter}
+import uk.gov.hmrc.play.partials.HeaderCarrierForPartialsConverter
 
 @Singleton
 class FrontendAuditConnector @Inject()(val app: Application) extends Auditing with AppName {
@@ -62,10 +61,5 @@ trait SessionCookieCryptoFilterWrapper {
 
 object ITSAHeaderCarrierForPartialsConverter extends HeaderCarrierForPartialsConverter with SessionCookieCryptoFilterWrapper {
   override val crypto = encryptCookieString _
-
-  override implicit def headerCarrierForPartialsToHeaderCarrier(implicit hcwc: HeaderCarrierForPartials): HeaderCarrier = {
-    println("implicitly here\n"+hcwc.toHeaderCarrier)
-    hcwc.toHeaderCarrier.withExtraHeaders("True-Client-IP" -> "ITSA-AGENT")
-  }
 }
 
