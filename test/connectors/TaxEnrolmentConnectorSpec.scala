@@ -28,7 +28,7 @@ class TaxEnrolmentConnectorSpec extends UnitTestTrait with MockTaxEnrolmentConne
 
   "TaxEnrolmentConnector.loadAuthority" should {
 
-    def call = await(TestEnrolmentConnector.loadAuthority())
+    def call = await(TestTaxEnrolmentConnector.loadAuthority())
 
     "return the cred it from a success response" in {
       setupLoadAuthority(loadAuthoritySuccess)
@@ -48,9 +48,9 @@ class TaxEnrolmentConnectorSpec extends UnitTestTrait with MockTaxEnrolmentConne
 
   "TaxEnrolmentConnector.getTaxEnrolment" should {
 
-    def loadAuth = await(TestEnrolmentConnector.loadAuthority())
+    def loadAuth = await(TestTaxEnrolmentConnector.loadAuthority())
 
-    def call = await(TestEnrolmentConnector.getTaxEnrolment())
+    def call = await(TestTaxEnrolmentConnector.getTaxEnrolment())
 
     "return the enrolments from a success response" in {
       setupLoadAuthority(loadAuthoritySuccess)

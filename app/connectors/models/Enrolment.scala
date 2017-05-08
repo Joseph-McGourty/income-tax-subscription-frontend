@@ -19,7 +19,7 @@ package connectors.models
 import play.api.libs.json.Json
 
 case class Enrolment(key: String, identifiers: Seq[Identifier], state: String) {
-  def isEnrolled: Enrolment.Enrolled = state.equals("Activated")
+  def isEnrolled: Enrolment.Enrolled = state.equals(Enrolment.ACTIVATED)
 }
 
 object Enrolment {
@@ -32,5 +32,15 @@ object Enrolment {
   implicit class OEnrolmentUtil(enrolment: Option[Enrolment]) {
     def isEnrolled: Enrolled = enrolment.fold(false)(_.isEnrolled)
   }
+
+  val ACTIVATED: String = "Activated"
+
+  // enrolment for ir sa, should contain Identifier("UTR", utr value)
+  val IR_SA_ENROLMENT = "IR-SA"
+  val UTR_IDENTIFIER = "UTR"
+
+  // enrolment for nino, should contain Identifier("NINO", nino value)
+  val HMRC_NI_ENROLMENT = "HMRC-NI"
+  val NINO_IDENTIFIER = "NINO"
 
 }

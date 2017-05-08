@@ -26,7 +26,7 @@ import utils.{TestConstants, UnitTestTrait}
 
 trait MockTaxEnrolmentConnector extends UnitTestTrait with MockHttp {
 
-  object TestEnrolmentConnector extends TaxEnrolmentConnector(appConfig, mockHttpGet, app.injector.instanceOf[Logging])
+  object TestTaxEnrolmentConnector extends TaxEnrolmentConnector(appConfig, mockHttpGet, app.injector.instanceOf[Logging])
 
   def setupMockLoadAuthority(status: Int, response: JsValue): Unit =
     setupMockHttpGet(s"${appConfig.authUrl}/auth/authority")(status, response)
