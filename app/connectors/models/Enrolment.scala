@@ -33,6 +33,10 @@ object Enrolment {
     def isEnrolled: Enrolled = enrolment.fold(false)(_.isEnrolled)
   }
 
+  implicit class OSeqEnrolmentUtil(enrolments: Option[Seq[Enrolment]]) {
+    def isEnrolled(enrolment: String): Enrolled = enrolments.fold(false)(_.find(_.key == enrolment).isEnrolled)
+  }
+
   val ACTIVATED: String = "Activated"
 
   // enrolment for ir sa, should contain Identifier("UTR", utr value)
