@@ -34,7 +34,7 @@
             <div class="form-field-group">
             @inputHelper(
                 field = clientToStubform(clientFirstName),
-                label = Messages("client-details.field_1"),
+                label = "First name",
                 labelClass = "form-label-bold",
                 maxLength = nameMaxLength,
                 parentForm = clientToStubform
@@ -43,7 +43,7 @@
             <div class="form-field-group">
             @inputHelper(
                 field = clientToStubform(clientLastName),
-                label = Messages("client-details.field_2"),
+                label = "Last name",
                 labelClass = "form-label-bold",
                 maxLength = nameMaxLength,
                 parentForm = clientToStubform
@@ -52,9 +52,9 @@
             <div class="form-field-group">
             @inputHelper(
                 field = clientToStubform(clientNino),
-                label = Messages("client-details.field_3"),
+                label = "National Insurance number",
                 labelClass = "form-label-bold",
-                formHint = Seq(Messages("client_details.formhint.1.line_1"), Messages("client_details.formhint.1.line_2")),
+                formHint = Seq("This is on your National Insurance card, payslip or P60.", "For example, 'QQ 12 34 56 C'."),
                 parentForm = clientToStubform
             )
             </div>
@@ -69,9 +69,9 @@
             </div>
             @dateHelper(
                 field = clientToStubform(clientDateOfBirth),
-                label = Messages("client-details.field_4"),
+                label = "Date of birth",
                 parentForm = clientToStubform,
-                hintText = Messages("client-details.formhint.2")
+                hintText = "For example, 10 12 1990"
             )
         </div>
 

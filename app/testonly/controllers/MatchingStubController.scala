@@ -31,6 +31,10 @@ import utils.Implicits._
 
 //$COVERAGE-OFF$Disabling scoverage on this class as it is only intended to be used by the test only controller
 
+/*
+* This controller is used to create a user stub entry to simulate data in CID
+* It will create the record in the dynamic-test-data mongo db
+*/
 @Singleton
 class MatchingStubController @Inject()(override val baseConfig: BaseControllerConfig,
                                        override val messagesApi: MessagesApi,
@@ -38,24 +42,26 @@ class MatchingStubController @Inject()(override val baseConfig: BaseControllerCo
                                       ) extends BaseController {
 
   def view(clientToStubForm: Form[ClientToStubModel])(implicit request: Request[_]): Html =
-    testonly.views.html.stub_client(
+    testonly.views.html.stub_user(
       clientToStubForm,
-      routes.MatchingStubController.stubClient()
+      routes.MatchingStubController.stubUser()
     )
 
 
-  def show = Action.async { implicit request =>
-    Ok(view(ClientToStubForm.clientToStubForm.form.fill(UserData().toClientToStubModel)))
+  def show = Authorised.async { implicit user =>
+    implicit request =>
+      Ok(view(ClientToStubForm.clientToStubForm.form.fill(UserData().toClientToStubModel)))
   }
 
-  def stubClient = Action.async { implicit request =>
-    ClientToStubForm.clientToStubForm.bindFromRequest.fold(
-      formWithErrors => BadRequest(view(formWithErrors)),
-      clientDetails =>
-        matchingStubConnector.newUser(clientDetails) map {
-          _ => Ok(testonly.views.html.show_stubbed_details(clientDetails))
-        }
-    )
+  def stubUser = Authorised.async { implicit user =>
+    implicit request =>
+      ClientToStubForm.clientToStubForm.bindFromRequest.fold(
+        formWithErrors => BadRequest(view(formWithErrors)),
+        userDetails =>
+          matchingStubConnector.newUser(userDetails) map {
+            _ => Ok(testonly.views.html.show_stubbed_details(userDetails))
+          }
+      )
   }
 
 }

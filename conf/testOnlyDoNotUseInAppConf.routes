@@ -13,8 +13,8 @@ GET         /report-quarterly/income-and-expenses/sign-up/test-only/clear-prefer
 GET         /report-quarterly/income-and-expenses/sign-up/test-only/auth-update              testonly.controllers.AuthUpdateController.update
 GET         /report-quarterly/income-and-expenses/sign-up/test-only/reset-throttle           testonly.controllers.ResetThrottleController.resetThrottle
 
-GET         /report-quarterly/income-and-expenses/sign-up/test-only/stub-client              testonly.controllers.MatchingStubController.show
-POST        /report-quarterly/income-and-expenses/sign-up/test-only/stub-client              testonly.controllers.MatchingStubController.stubClient
+GET         /report-quarterly/income-and-expenses/sign-up/test-only/stub-user                testonly.controllers.MatchingStubController.show
+POST        /report-quarterly/income-and-expenses/sign-up/test-only/stub-user                testonly.controllers.MatchingStubController.stubUser
 
 
 GET         /report-quarterly/income-and-expenses/sign-up/test-only/cred-id                  testonly.controllers.CredController.show

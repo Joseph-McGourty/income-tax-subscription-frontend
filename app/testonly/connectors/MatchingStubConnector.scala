@@ -46,7 +46,6 @@ case class UserData(nino: Value = Value("AA 11 11 11 A"),
                     firstName: Value = Value("Test"),
                     lastName: Value = Value("User"),
                     dob: Value = Value("01011980")) {
-  //$COVERAGE-OFF$Disabling scoverage on this method as it is only intended to be used by the test only controller
 
   def toClientToStubModel: ClientToStubModel = ClientToStubModel(
     firstName = firstName.value,
@@ -56,13 +55,10 @@ case class UserData(nino: Value = Value("AA 11 11 11 A"),
     dateOfBirth = LocalDate.parse(dob.value, UserData.dobFormat): DateModel
   )
 
-  // $COVERAGE-ON$
-
 }
 
 object UserData {
 
-  //$COVERAGE-OFF$Disabling scoverage on these fields and metho as they are only intended to be used by the test only controller
 
   private val dobFormat = DateTimeFormatter.ofPattern("ddMMuuuu").withResolverStyle(ResolverStyle.STRICT)
 
@@ -74,11 +70,9 @@ object UserData {
     dob = Value(clientToStubModel.dateOfBirth.toLocalDate.format(dobFormat))
   )
 
-  // $COVERAGE-ON$
-
   implicit val format = Json.format[UserData]
-
 }
+
 
 /*
  * the N.B. in order to make use of the stub the testId must be sent in the header under "True-Client-IP"
