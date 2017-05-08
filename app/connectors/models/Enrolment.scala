@@ -16,6 +16,7 @@
 
 package connectors.models
 
+import common.Constants
 import play.api.libs.json.Json
 
 case class Enrolment(key: String, identifiers: Seq[Identifier], state: String) {
@@ -40,8 +41,8 @@ object Enrolment {
   val ACTIVATED: String = "Activated"
 
   // enrolment for ir sa, should contain Identifier("UTR", utr value)
-  val IR_SA_ENROLMENT = "IR-SA"
-  val UTR_IDENTIFIER = "UTR"
+  val IR_SA_ENROLMENT = Constants.irSaServiceName
+  val UTR_IDENTIFIER =  Constants.utr
 
   // enrolment for nino, should contain Identifier("NINO", nino value)
   val HMRC_NI_ENROLMENT = "HMRC-NI"

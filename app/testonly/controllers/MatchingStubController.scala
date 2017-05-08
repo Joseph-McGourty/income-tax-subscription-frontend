@@ -18,13 +18,16 @@ package testonly.controllers
 
 import javax.inject.{Inject, Singleton}
 
+import common.Constants
 import config.BaseControllerConfig
+import connectors.models.Enrolment
 import controllers.BaseController
 import play.api.data.Form
 import play.api.i18n.MessagesApi
-import play.api.mvc.{Action, Request}
+import play.api.mvc.Request
 import play.twirl.api.Html
-import testonly.connectors.{MatchingStubConnector, UserData}
+import services.EnrolmentService
+import testonly.connectors.{MatchingStubConnector, UserData, Value}
 import testonly.forms.ClientToStubForm
 import testonly.models.ClientToStubModel
 import utils.Implicits._
@@ -38,7 +41,8 @@ import utils.Implicits._
 @Singleton
 class MatchingStubController @Inject()(override val baseConfig: BaseControllerConfig,
                                        override val messagesApi: MessagesApi,
-                                       matchingStubConnector: MatchingStubConnector
+                                       matchingStubConnector: MatchingStubConnector,
+                                       enrolmentService: EnrolmentService
                                       ) extends BaseController {
 
   def view(clientToStubForm: Form[ClientToStubModel])(implicit request: Request[_]): Html =
@@ -47,10 +51,18 @@ class MatchingStubController @Inject()(override val baseConfig: BaseControllerCo
       routes.MatchingStubController.stubUser()
     )
 
-
   def show = Authorised.async { implicit user =>
     implicit request =>
-      Ok(view(ClientToStubForm.clientToStubForm.form.fill(UserData().toClientToStubModel)))
+      lazy val noUTR = Ok(view(ClientToStubForm.clientToStubForm.form.fill(UserData().toClientToStubModel)))
+      enrolmentService.getAllEnrolment.flatMap { enrolments =>
+        enrolments.map(_.find(_.key == Constants.irSaServiceName)) match {
+          case Some(Some(irsa)) =>
+            irsa.identifiers.find(_.key == Enrolment.UTR_IDENTIFIER).fold(noUTR)(
+              id => Ok(view(ClientToStubForm.clientToStubForm.form.fill(UserData(sautr = Value(id.value)).toClientToStubModel)))
+            )
+          case _ => noUTR
+        }
+      }
   }
 
   def stubUser = Authorised.async { implicit user =>

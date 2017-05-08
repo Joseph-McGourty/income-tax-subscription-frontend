@@ -20,5 +20,6 @@ object Constants {
 
   val mtdItServiceName = "HMRC-MTD-IT"
   val irSaServiceName = "IR-SA"
+  val utr = "UTR"
 
 }

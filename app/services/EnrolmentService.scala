@@ -21,6 +21,7 @@ import javax.inject.{Inject, Singleton}
 import audit.Logging
 import common.Constants
 import connectors.EnrolmentConnector
+import connectors.models.Enrolment
 import connectors.models.Enrolment.Enrolled
 import play.api.mvc.Result
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
@@ -34,13 +35,17 @@ class EnrolmentService @Inject()(val authConnector: AuthConnector,
                                  val enrolmentConnector: EnrolmentConnector,
                                  logging: Logging) {
 
-  def checkEnrolment(enrolmentKey: String, f: Enrolled => Future[Result])(implicit hc: HeaderCarrier): Future[Result] = {
-    logging.debug(s"Checking enrolment for: $enrolmentKey")
+  def getAllEnrolment(implicit hc: HeaderCarrier): Future[Option[Seq[Enrolment]]] = {
+    logging.debug(s"get all enrolment")
     for {
       authority <- authConnector.currentAuthority
       enrolments <- enrolmentConnector.getEnrolments(authority.fold("")(_.uri))
-      result <- f(enrolments.isEnrolled(enrolmentKey))
-    } yield result
+    } yield enrolments
+  }
+
+  def checkEnrolment(enrolmentKey: String, f: Enrolled => Future[Result])(implicit hc: HeaderCarrier): Future[Result] = {
+    logging.debug(s"Checking enrolment for: $enrolmentKey")
+    getAllEnrolment.flatMap(enrolments => f(enrolments.isEnrolled(enrolmentKey)))
   }
 
   def checkMtdItsaEnrolment(f: Enrolled => Future[Result])(implicit hc: HeaderCarrier): Future[Result] =
