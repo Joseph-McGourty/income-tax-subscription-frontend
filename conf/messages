@@ -16,6 +16,7 @@ base.error_heading                                              = There''s a pro
 base.change                                                     = Change
 base.yes                                                        = Yes
 base.no                                                         = No
+base.go_back                                                    = Go back
 
 ## Front page
 frontpage.title                                                 = Sign up to report your income and expenses quarterly
@@ -38,11 +39,37 @@ frontpage.bullet_8                                              = send your summ
 frontpage.line_6                                                = You can:
 frontpage.bullet_9                                              = use your business tax account from August 2017 to see your reports and what you might owe
 
+## User Details ##
+user-details.title                                              = Enter your details
+user-details.heading                                            = Enter your details
+user-details.line_1                                             = We will attempt to match these details against information we currently hold.
+user-details.field_1                                            = First name
+user-details.field_2                                            = Last name
+user-details.field_3                                            = National Insurance number
+user-details.field_4                                            = Date of birth
+user-details.formhint.1.line_1                                  = This is on your National Insurance card, payslip or P60.
+user-details.formhint.1.line_2                                  = For example, ''QQ 12 34 56 C''.
+user-details.formhint.2                                         = For example, 10 12 1990
+
+# Check your details page
+user-details.summary.title                                      = Confirm your details
+user-details.summary.heading                                    = Check your answers
+user-details.summary.heading_hidden                             = before looking up your details
+user-details.summary.h2                                         = You''ve told us
+user-details.summary.first_name                                 = First name
+user-details.summary.last_name                                  = Last name
+user-details.summary.nino                                       = National Insurance number
+user-details.summary.dob                                        = Date of birth
+
+# User details maching error page
+user-details-error.title                                        = Match error
+user-details-error.heading                                      = We couldn''t confirm you on our system
+user-details-error.line_1                                       = The details you''ve entered are not on our system.
+
 ## Preferences call back page
 preferences_callback.title                                      = Do you want to continue?
 preferences_callback.heading                                    = You can''t sign up for quarterly reporting
 preferences_callback.line_1                                     = To sign up for this service, you must allow HMRC to send you electronic communications.
-preferences_callback.button                                     = Go back
 
 ## Income source page
 income_source.title                                             = Where does your income come from?
@@ -187,6 +214,16 @@ confirmation.whatHappensNext.para4                              = Activate your 
 confirmation.sign_out                                           = Finish
 
 ## Errors ##
+error.nino.invalid                                              = You must enter a valid National Insurance number
+error.nino.empty                                                = You must enter a National Insurance number
+
+error.user_details.first_name.empty                             = You must enter your first name
+error.user_details.last_name.empty                              = You must enter your last name
+error.user_details.first_name.invalid                           = Your first name contains invalid characters
+error.user_details.last_name.invalid                            = Your last name contains invalid characters
+error.user_details.first_name.maxLength                         = The first name is too long
+error.user_details.last_name.maxLength                          = The last name is too long
+
 error.back_to_preferences.empty                                 = You must select an option to continue
 
 error.income_source.empty                                       = You must select an option to continue

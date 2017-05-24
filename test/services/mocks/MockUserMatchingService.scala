@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-package services
+package services.mocks
 
-object CacheConstants {
-  val IncomeSource = "IncomeSource"
-  val PropertyIncome = "PropertyIncome"
-  val SoleTrader = "SoleTrader"
-  val AccountingPeriodPrior = "AccountingPeriodPrior"
-  val RegisterNextAccountingPeriod = "RegisterNextAccountingPeriod"
-  val BusinessName = "BusinessName"
-  val AccountingPeriodDate = "AccountingPeriodDate"
-  val AccountingMethod = "AccountingMethod"
-  val Terms = "Terms"
-  val OtherIncome = "OtherIncome"
-  val NotEligible = "NotEligible"
-  val MtditId = "MtditId"
-  val UserDetails = "UserDetails"
+import connectors.mocks.MockAuthenticatorConnector
+import services.UserMatchingService
+
+trait MockUserMatchingService extends MockAuthenticatorConnector {
+
+  object TestUserMatchingService extends UserMatchingService(appConfig, TestAuthenticatorConnector)
+
 }

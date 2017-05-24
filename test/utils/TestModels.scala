@@ -19,6 +19,7 @@ package utils
 
 import forms._
 import models._
+import models.matching.UserDetailsModel
 import play.api.libs.json.JsValue
 import services.CacheConstants
 import uk.gov.hmrc.domain.Generator
@@ -95,4 +96,6 @@ object TestModels extends Implicits {
 
   lazy val testOtherIncomeYes = OtherIncomeModel(OtherIncomeForm.option_yes)
 
+  // we don't verify date of birth since an incorrect one would not result in a match so it can be any date
+  lazy val testUserDetails = UserDetailsModel("Test", "User", TestConstants.testNino, testStartDate)
 }

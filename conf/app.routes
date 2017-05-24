@@ -8,6 +8,18 @@ GET         /index                            controllers.HomeController.index
 # SignOut Controller
 GET         /logout                           controllers.SignOutController.signOut
 
+# User Matching
+GET         /user-details                     controllers.matching.UserDetailsController.show(editMode: Boolean ?= false)
+POST        /user-details                     controllers.matching.UserDetailsController.submit(editMode: Boolean ?= false)
+
+# Check your details
+GET         /confirm-details                  controllers.matching.ConfirmDetailsController.show
+POST        /confirm-details                  controllers.matching.ConfirmDetailsController.submit
+
+# your details did not matched existing records
+GET         /error/confirm-details            controllers.matching.UserDetailsErrorController.show
+POST        /error/confirm-details            controllers.matching.UserDetailsErrorController.submit
+
 # Preferences routes
 GET         /preferences                      controllers.preferences.PreferencesController.checkPreferences
 GET         /callback                         controllers.preferences.PreferencesController.callback

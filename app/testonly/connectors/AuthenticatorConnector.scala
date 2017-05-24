@@ -31,7 +31,7 @@ import scala.concurrent.Future
 class AuthenticatorConnector @Inject()(appConfig: TestOnlyAppConfig,
                                        http: WSHttp) extends RawResponseReads {
 
-  lazy val refreshURI = s"${appConfig.authenticatorURL}/authenticator/refresh-profile"
+  lazy val refreshURI = s"${appConfig.authenticatorUrl}/authenticator/refresh-profile"
 
   def refreshProfile()(implicit hc: HeaderCarrier): Future[HttpResponse] =
     http.POSTEmpty[HttpResponse](refreshURI)

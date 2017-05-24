@@ -50,6 +50,8 @@ trait AppConfig {
   val ipExclusionList: Seq[Call]
   val shutterPage: String
   val enableCheckSubscription: Boolean
+  val authenticatorUrl: String
+  val hasEnabledTestOnlyRoutes: Boolean
 }
 
 @Singleton
@@ -118,6 +120,19 @@ class FrontendAppConfig @Inject()(val app: Application) extends AppConfig with S
 
   // Enable or disable calling check already subscribed from the HomeController
   override lazy val enableCheckSubscription: Boolean = loadConfig("feature-switch.enable-check-subscription").toBoolean
+
+  override lazy val authenticatorUrl: String = baseUrl("authenticator")
+
+  /*
+  *  This checks to see if the testOnlyDoNotUseInAppConf route is set in configuration instead of the default prod.Routes
+  *  This flag can be used by the application to check if the test only routes are enabled. i.e. this flag can be used to
+  *  determine the service is not running in the prod environment
+  *
+  *  One usage of this is in ClientMatchingService where we determine if a "True-Client-IP" should be added for the purpose of
+  *  matching.
+  */
+  override lazy val hasEnabledTestOnlyRoutes: Boolean =
+    configuration.getString("application.router").get == "testOnlyDoNotUseInAppConf.Routes"
 
 }
 

@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-package services
+package connectors.models.matching
 
-object CacheConstants {
-  val IncomeSource = "IncomeSource"
-  val PropertyIncome = "PropertyIncome"
-  val SoleTrader = "SoleTrader"
-  val AccountingPeriodPrior = "AccountingPeriodPrior"
-  val RegisterNextAccountingPeriod = "RegisterNextAccountingPeriod"
-  val BusinessName = "BusinessName"
-  val AccountingPeriodDate = "AccountingPeriodDate"
-  val AccountingMethod = "AccountingMethod"
-  val Terms = "Terms"
-  val OtherIncome = "OtherIncome"
-  val NotEligible = "NotEligible"
-  val MtditId = "MtditId"
-  val UserDetails = "UserDetails"
+import play.api.libs.json.Json
+
+// the response from authenticator/match with message to indicate why matching failed
+case class ClientMatchFailureResponseModel(errors: String)
+
+object ClientMatchFailureResponseModel {
+  implicit val format = Json.format[ClientMatchFailureResponseModel]
+  val unexpectedError = "Internal error: unexpected result from matching"
 }

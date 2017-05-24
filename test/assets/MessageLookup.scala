@@ -33,6 +33,7 @@ object MessageLookup {
     val change = "Change"
     val where_can_i_get_this_information = "Where can I get this information"
     val signUp = "Sign up"
+    val dateOfBirth = "Date of birth"
     val goBack = "Go back"
   }
 
@@ -58,11 +59,40 @@ object MessageLookup {
     val line_6 = "You can:"
   }
 
+  object UserDetailsError {
+    val title = "Match error"
+    val heading = "We couldn't confirm you on our system"
+    val line1 = "The details you've entered are not on our system."
+  }
+
+  object UserDetails {
+    val title = "Enter your details"
+    val heading = "Enter your details"
+    val line1 = "We will attempt to match these details against information we currently hold."
+    val field1 = "First name"
+    val field2 = "Last name"
+    val field3 = "National Insurance number"
+    val field4 = "Date of birth"
+    val formhint1_line1 = "This is on your National Insurance card, payslip or P60."
+    val formhint1_line2 = "For example, 'QQ 12 34 56 C'."
+    val formhint2 = "For example, 10 12 1990"
+  }
+
+  object ConfirmUserDetails {
+    val title = "Confirm your details"
+    val heading = "Check your answers"
+    val heading_hidden = "before looking up your details"
+    val h2 = "You've told us"
+    val firstName = "First name"
+    val lastName = "Last name"
+    val nino = "National Insurance number"
+    val dob = "Date of birth"
+  }
+
   object PreferencesCallBack {
     val title = "Do you want to continue?"
     val heading: String = "You can't sign up for quarterly reporting"
     val legend: String = "To sign up for this service, you must allow HMRC to send you electronic communications."
-    val button: String = "Go back"
     val signOut: String = "Sign out"
   }
 
@@ -223,6 +253,20 @@ object MessageLookup {
   }
 
   object Error {
+
+    object UserDetails {
+      val firstNameEmpty = "You must enter your first name"
+      val lastNameEmpty = "You must enter your last name"
+      val firstNameInvalid = "Your first name contains invalid characters"
+      val lastNameInvalid = "Your last name contains invalid characters"
+      val firstNameMaxLength = "The first name is too long"
+      val lastNameMaxLength = "The last name is too long"
+    }
+
+    object Nino {
+      val empty = "You must enter a National Insurance number"
+      val invalid = "You must enter a valid National Insurance number"
+    }
 
     object BackToPreferences {
       val empty = "You must select an option to continue"
