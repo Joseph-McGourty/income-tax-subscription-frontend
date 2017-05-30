@@ -37,5 +37,7 @@ object IntegrationTestConstants {
     testNino,
     dateOfBirth
   )
-  val baseURI = "report-quarterly/income-and-expenses/sign-up"
+  val baseURI = "/report-quarterly/income-and-expenses/sign-up"
+  val userDetailsURI = "/user-details"
+  val confirmDetailsURI = "/confirm-details"
 }

@@ -51,12 +51,12 @@ class UserDetailsControllerISpec extends ComponentSpecBase {
         getUserDetails() should have (
           httpStatus(OK),
           pageTitle(Messages("user-details.title")),
-          elementByID("firstName")(testUserDetails.firstName),
-          elementByID("lastName")(testUserDetails.lastName),
-          elementByID("nino")(testUserDetails.nino),
-          elementByID("dateOfBirth.dateDay")(testUserDetails.dateOfBirth.day),
-          elementByID("dateOfBirth.dateMonth")(testUserDetails.dateOfBirth.month),
-          elementByID("dateOfBirth.dateYear")(testUserDetails.dateOfBirth.year)
+          elementValueByID("firstName")(testUserDetails.firstName),
+          elementValueByID("lastName")(testUserDetails.lastName),
+          elementValueByID("nino")(testUserDetails.nino),
+          elementValueByID("dateOfBirth.dateDay")(testUserDetails.dateOfBirth.day),
+          elementValueByID("dateOfBirth.dateMonth")(testUserDetails.dateOfBirth.month),
+          elementValueByID("dateOfBirth.dateYear")(testUserDetails.dateOfBirth.year)
         )
       }
 
@@ -97,7 +97,15 @@ class UserDetailsControllerISpec extends ComponentSpecBase {
 
       postUserDetails(testUserDetails) should have (
         httpStatus(SEE_OTHER),
-        redirectURI(s"/$baseURI/confirm-details")
+        redirectURI(baseURI + confirmDetailsURI)
+      )
+    }
+
+    "return a redirect to the login page when unauthorized" in {
+      stub when Get(authority) thenReturn UNAUTHORIZED
+
+      postUserDetails(testUserDetails) should have (
+        httpStatus(SEE_OTHER)
       )
     }
   }

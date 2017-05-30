@@ -48,7 +48,7 @@ trait CustomMatchers {
       }
     }
 
-  def elementByID(id: String)(expectedValue: String): HavePropertyMatcher[WSResponse, String] =
+  def elementValueByID(id: String)(expectedValue: String): HavePropertyMatcher[WSResponse, String] =
     new HavePropertyMatcher[WSResponse, String] {
 
       def apply(response: WSResponse) = {
@@ -59,6 +59,21 @@ trait CustomMatchers {
           s"elementByID($id)",
           expectedValue,
           body.getElementById(id).`val`
+        )
+      }
+    }
+
+  def elementTextByID(id: String)(expectedValue: String): HavePropertyMatcher[WSResponse, String] =
+    new HavePropertyMatcher[WSResponse, String] {
+
+      def apply(response: WSResponse) = {
+        val body = Jsoup.parse(response.body)
+
+        HavePropertyMatchResult(
+          body.getElementById(id).text == expectedValue,
+          s"elementByID($id)",
+          expectedValue,
+          body.getElementById(id).text
         )
       }
     }

@@ -24,6 +24,7 @@ import helpers.servicemocks.AuditStub
 import models.matching.UserDetailsModel
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+import play.api.inject.bind
 import org.scalatest._
 import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
@@ -35,7 +36,7 @@ import play.api.libs.json.{JsArray, JsValue, Json, Writes}
 import play.api.libs.ws.WSResponse
 import play.api.mvc.AnyContentAsFormUrlEncoded
 import play.api.test.FakeRequest
-import play.api.{Application, Environment, Mode}
+import play.api._
 import uk.gov.hmrc.play.test.UnitSpec
 
 trait ComponentSpecBase extends UnitSpec
@@ -94,6 +95,7 @@ trait ComponentSpecBase extends UnitSpec
 
     def startPage(): WSResponse = get("/")
     def getUserDetails(): WSResponse = get("/user-details")
+    def getConfirmDetails(): WSResponse = get("/confirm-details")
     def postUserDetails(userDetails: UserDetailsModel): WSResponse =
       post("/user-details")(toFormData(forms.matching.UserDetailsForm.userDetailsValidationForm, userDetails))
   }
