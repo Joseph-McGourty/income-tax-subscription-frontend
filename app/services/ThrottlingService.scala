@@ -22,18 +22,21 @@ import audit.Logging
 import auth.IncomeTaxSAUser
 import connectors.models.throttling.UserAccess
 import connectors.throttling.ThrottlingControlConnector
+import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.play.http.{HeaderCarrier, InternalServerException}
 import utils.Implicits._
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 @Singleton
 class ThrottlingService @Inject()(throttlingControlConnector: ThrottlingControlConnector,
+                                  keystoreService: KeystoreService,
                                   logging: Logging
                                  ) {
 
-  def checkAccess(implicit user: IncomeTaxSAUser, hc: HeaderCarrier): Future[Option[UserAccess]] = {
-    user.nino match {
+  def checkAccess(implicit user: IncomeTaxSAUser, request: Request[AnyContent], hc: HeaderCarrier): Future[Option[UserAccess]] = {
+    keystoreService.getNino() flatMap {
       case Some(nino) => throttlingControlConnector.checkAccess(nino)
       case None =>
         logging.warn("ThrottlingService.checkAccess: unexpected error, no nino found")

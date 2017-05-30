@@ -67,7 +67,8 @@ class HomeController @Inject()(override val baseConfig: BaseControllerConfig,
           case _ =>
             keystoreService.fetchUserEnteredNino flatMap {
               case Some(nino) => callGetSubscription(nino)
-              case _ => showInternalServerError
+              case _ =>
+                Redirect(controllers.matching.routes.UserDetailsController.show()).removingFromSession(ITSASessionKey.NINO)
             }
         }
     }

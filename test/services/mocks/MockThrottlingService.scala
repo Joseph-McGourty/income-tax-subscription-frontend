@@ -24,10 +24,12 @@ import utils.UnitTestTrait
 
 trait MockThrottlingService extends UnitTestTrait
   with MockAuthConnector
-  with MockThrottlingControlConnector {
+  with MockThrottlingControlConnector
+  with MockKeystoreService {
 
   object TestThrottlingService extends ThrottlingService(
     TestThrottlingControlConnector,
+    MockKeystoreService,
     app.injector.instanceOf[Logging]
   )
 

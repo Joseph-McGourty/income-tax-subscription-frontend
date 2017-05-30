@@ -16,7 +16,8 @@
 
 package services
 
-import auth.{IncomeTaxSAUser, authenticatedFakeRequest}
+import auth.{IncomeTaxSAUser, authenticatedFakeRequest, authenticatedNoNinoFakeRequest}
+import controllers.ITSASessionKey
 import org.scalatest.Matchers._
 import play.api.test.Helpers._
 import services.mocks.MockThrottlingService
@@ -25,7 +26,7 @@ import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.frontend.auth.connectors.domain
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Authority, ConfidenceLevel, CredentialStrength}
 import uk.gov.hmrc.play.http.{HeaderCarrier, InternalServerException}
-import utils.UnitTestTrait
+import utils.{TestConstants, TestModels, UnitTestTrait}
 
 class ThrottlingServiceSpec extends UnitTestTrait
   with MockThrottlingService {
@@ -69,8 +70,24 @@ class ThrottlingServiceSpec extends UnitTestTrait
       verifyMockCheckAccess(auth.nino)(1)
     }
 
+    "if there's no nino present in auth but nino exists in keystore, call the throttling connector.check access using the nino from keystore" in {
+      val userDetails = TestModels.testUserDetails.copy(nino = TestConstants.testNino)
+
+      implicit val user = IncomeTaxSAUser(TestUser.noNinoUserContext)
+      implicit lazy val request = authenticatedNoNinoFakeRequest.withSession(ITSASessionKey.NINO -> userDetails.ninoHash)
+
+      setupMockKeystore(fetchUserDetails = userDetails)
+      setupMockCheckAccess(auth.nino)(OK)
+
+      await(TestThrottlingService.checkAccess)
+
+      verifyMockCheckAccess(auth.nino)(1)
+      verifyKeystore(fetchUserDetails = 1)
+    }
+
     "if there's a nino present for the user, do not call the throttling connector.check access" in {
       implicit val user = IncomeTaxSAUser(TestUser.noNinoUserContext)
+      implicit lazy val request = authenticatedNoNinoFakeRequest
 
       setupMockCheckAccess(auth.nino)(OK)
 

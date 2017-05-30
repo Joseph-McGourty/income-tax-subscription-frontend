@@ -16,15 +16,16 @@
 
 package services
 
+import auth.IncomeTaxSAUser
 import config.SessionCache
 import controllers.ITSASessionKey
-import models.{BusinessNameModel, DateModel}
 import models.matching.UserDetailsModel
+import models.{BusinessNameModel, DateModel}
 import org.scalatest.Matchers._
+import play.api.test.Helpers._
 import services.mocks.MockKeystoreService
 import uk.gov.hmrc.play.http.HttpResponse
 import utils.{TestConstants, TestModels, UnitTestTrait}
-import play.api.test.Helpers._
 
 class KeystoreServiceSpec extends UnitTestTrait
   with MockKeystoreService {
@@ -124,6 +125,62 @@ class KeystoreServiceSpec extends UnitTestTrait
       setupMockKeystore(fetchUserDetails = testUserDetails)
       val r = TestKeystore.keystoreService.fetchUserEnteredNino()
       await(r) shouldBe Some(testNino)
+    }
+  }
+
+  "KeyStoreServiceUtil.getNino" should {
+
+    val testNino = TestConstants.testNino
+    val testUserDetails = UserDetailsModel(
+      firstName = "",
+      lastName = "",
+      nino = testNino,
+      dateOfBirth = DateModel("01", "01", "1980")
+    )
+
+    lazy val requestNoNinoInSession = auth.authenticatedNoNinoFakeRequest
+    lazy val requestNinoInSession = auth.authenticatedNoNinoFakeRequest.withSession(ITSASessionKey.NINO -> testUserDetails.ninoHash)
+    lazy val requestWrongNinoInSession = auth.authenticatedNoNinoFakeRequest.withSession(ITSASessionKey.NINO -> "differentHash")
+
+
+    "if the nino is in auth then return that and do not call keystore" in {
+      implicit val user = IncomeTaxSAUser(auth.ggUser.userCL200Context)
+      implicit val req = auth.authenticatedFakeRequest()
+      setupMockKeystore(fetchUserDetails = None)
+      val r = TestKeystore.keystoreService.getNino()
+      await(r) shouldBe Some(testNino)
+
+      verifyKeystore(fetchUserDetails = 0)
+    }
+
+    "if the nino is not in auth and nino hash is in session then call keystore" in {
+      implicit val user = IncomeTaxSAUser(auth.ggUser.userCL200NoAccountsContext)
+      implicit val req = requestNinoInSession
+      setupMockKeystore(fetchUserDetails = testUserDetails)
+      val r = TestKeystore.keystoreService.getNino()
+      await(r) shouldBe Some(testNino)
+
+      verifyKeystore(fetchUserDetails = 1)
+    }
+
+    "if the nino is not in auth and nino hash is in session then call keystore, but if nino hash does not match then return None" in {
+      implicit val user = IncomeTaxSAUser(auth.ggUser.userCL200NoAccountsContext)
+      implicit val req = requestWrongNinoInSession
+      setupMockKeystore(fetchUserDetails = testUserDetails)
+      val r = TestKeystore.keystoreService.getNino()
+      await(r) shouldBe None
+
+      verifyKeystore(fetchUserDetails = 1)
+    }
+
+    "if the nino is not in auth and nino hash is not in session then do not call keystore and return None" in {
+      implicit val user = IncomeTaxSAUser(auth.ggUser.userCL200NoAccountsContext)
+      implicit val req = requestNoNinoInSession
+      setupMockKeystore(fetchUserDetails = testUserDetails)
+      val r = TestKeystore.keystoreService.getNino()
+      await(r) shouldBe None
+
+      verifyKeystore(fetchUserDetails = 0)
     }
   }
 

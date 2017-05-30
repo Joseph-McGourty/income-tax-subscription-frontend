@@ -18,13 +18,14 @@ package controllers
 
 import assets.MessageLookup.FrontPage
 import audit.Logging
-import auth.{MockConfig, authenticatedFakeRequest}
+import auth.{MockConfig, authenticatedFakeRequest, authenticatedNoNinoFakeRequest}
 import config.BaseControllerConfig
 import org.jsoup.Jsoup
 import play.api.http.Status
-import play.api.mvc.{Action, AnyContent}
+import play.api.mvc.{Action, AnyContent, Request, RequestHeader}
 import play.api.test.Helpers._
 import services.mocks.{MockKeystoreService, MockSubscriptionService, MockThrottlingService}
+import utils.{TestConstants, TestModels}
 
 
 class HomeControllerSpec extends ControllerBaseSpec
@@ -112,6 +113,67 @@ class HomeControllerSpec extends ControllerBaseSpec
     }
 
     // N.B. the subscribeNone case is covered below
+  }
+
+  "Calling the index action of the Home controller with an authorised user who has no nino in auth" when {
+    def call(request: Request[AnyContent]) = TestHomeController(enableThrottling = true, showGuidance = false, enableCheckSubscriptionCalls = true).index()(request)
+
+    "there is no nino hash in session" should {
+      s"redirect them to ${controllers.matching.routes.UserDetailsController.show().url}" in {
+        setupGetSubscription(auth.nino)(subscribeNone)
+        // this is mocked to check we don't call throttle as well
+        setupMockCheckAccess(auth.nino)(OK)
+
+        val result = call(authenticatedNoNinoFakeRequest)
+        status(result) must be(Status.SEE_OTHER)
+        redirectLocation(result).get mustBe controllers.matching.routes.UserDetailsController.show().url
+
+        verifyGetSubscription(auth.nino)(0)
+        verifyMockCheckAccess(auth.nino)(0)
+      }
+    }
+
+    "the nino hash in session matches the nino stored in keystore" should {
+      s"pass through the controller normally and proceed to ${controllers.preferences.routes.PreferencesController.checkPreferences().url}" in {
+        setupGetSubscription(auth.nino)(subscribeNone)
+        // this is mocked to check we don't call throttle as well
+        setupMockCheckAccess(auth.nino)(OK)
+        val userDetails = TestModels.testUserDetails.copy(nino = TestConstants.testNino)
+        setupMockKeystore(fetchUserDetails = userDetails)
+
+        val result = call(authenticatedNoNinoFakeRequest.withSession(ITSASessionKey.NINO -> userDetails.ninoHash))
+        status(result) must be(Status.SEE_OTHER)
+
+        redirectLocation(result).get mustBe controllers.preferences.routes.PreferencesController.checkPreferences().url
+
+        verifyGetSubscription(auth.nino)(1)
+        verifyMockCheckAccess(auth.nino)(1)
+      }
+    }
+
+    "the nino hash in session does not match the nino stored in keystore" should {
+      s"redirects to ${controllers.matching.routes.UserDetailsController.show().url}" in {
+        setupGetSubscription(auth.nino)(subscribeNone)
+        // this is mocked to check we don't call throttle as well
+        setupMockCheckAccess(auth.nino)(OK)
+        val userDetails = TestModels.testUserDetails.copy(nino = TestConstants.testNino)
+        setupMockKeystore(fetchUserDetails = userDetails)
+
+        val request = authenticatedNoNinoFakeRequest.withSession(ITSASessionKey.NINO -> "notNinoHash")
+        implicit val requestHeader: RequestHeader = request.copy()
+
+        val result = call(request)
+        status(result) must be(Status.SEE_OTHER)
+
+        redirectLocation(result).get mustBe controllers.matching.routes.UserDetailsController.show().url
+
+        // the nino hash must be removed from session
+        await(result).session.get(ITSASessionKey.NINO) mustBe None
+
+        verifyGetSubscription(auth.nino)(0)
+        verifyMockCheckAccess(auth.nino)(0)
+      }
+    }
   }
 
   for (enableCheckSubscription <- Seq(true, false)) {

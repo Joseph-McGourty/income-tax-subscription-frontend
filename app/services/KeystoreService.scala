@@ -19,6 +19,7 @@ package services
 
 import javax.inject._
 
+import auth.IncomeTaxSAUser
 import controllers.ITSASessionKey
 import models._
 import models.matching.UserDetailsModel
@@ -114,14 +115,21 @@ object KeystoreService {
     import scala.concurrent.ExecutionContext.Implicits.global
 
     def fetchUserEnteredNino()(implicit request: Request[AnyContent], hc: HeaderCarrier, reads: Reads[UserDetailsModel]): Future[Option[String]] =
-    request.session.get(ITSASessionKey.NINO) match {
-      case Some(sessionHash) => keystoreService.fetchUserDetails().flatMap {
-        case Some(u: UserDetailsModel) =>
-          if (u.ninoHash == sessionHash) Some(u.ninoInBackendFormat)
-          else None
+      request.session.get(ITSASessionKey.NINO) match {
+        case Some(sessionHash) => keystoreService.fetchUserDetails().flatMap {
+          case Some(u: UserDetailsModel) =>
+            if (u.ninoHash == sessionHash) Some(u.ninoInBackendFormat)
+            else None
+          case _ => None
+        }
+        case _ => None
       }
-      case _ => None
-    }
+
+    def getNino()(implicit user: IncomeTaxSAUser, request: Request[AnyContent], hc: HeaderCarrier, reads: Reads[UserDetailsModel]): Future[Option[String]] =
+      user.nino match {
+        case nino@Some(_) => nino
+        case _ => fetchUserEnteredNino()
+      }
   }
 
 }
