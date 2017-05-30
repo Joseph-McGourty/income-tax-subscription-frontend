@@ -19,10 +19,12 @@ package controllers
 import audit.Logging
 import auth._
 import play.api.http.Status
-import play.api.mvc.{Action, AnyContent}
+import play.api.mvc.{Action, AnyContent, AnyContentAsEmpty, Request}
+import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import services.mocks.{MockKeystoreService, MockSubscriptionService}
-import utils.TestModels
+import uk.gov.hmrc.play.http.InternalServerException
+import utils.{TestConstants, TestModels}
 
 class CheckYourAnswersControllerSpec extends ControllerBaseSpec
   with MockKeystoreService
@@ -72,14 +74,55 @@ class CheckYourAnswersControllerSpec extends ControllerBaseSpec
         redirectLocation(result) mustBe Some(controllers.routes.ConfirmationController.showConfirmation().url)
       }
     }
+
     "When the submission is unsuccessful" should {
       lazy val result = call
 
-      "return a internalServer error" in {
+      "return a failure if subscription fails" in {
         setupMockKeystore(fetchAll = TestModels.testCacheMap)
         setupSubscribe()(subscribeBadRequest)
-        status(result) must be(Status.INTERNAL_SERVER_ERROR)
+        val ex = intercept[InternalServerException](await(call))
+        ex.message mustBe "Successful response not received from submission"
+        verifyKeystore(fetchAll = 1, saveSubscriptionId = 0)
+      }
+
+    }
+  }
+
+  "Calling the submit action of the CheckYourAnswersController with an authorised user who does not have nino in their auth profile" should {
+
+    def call(request: FakeRequest[AnyContentAsEmpty.type]) = TestCheckYourAnswersController.submit(request
+      .withSession(ITSASessionKey.NINO -> TestModels.testUserDetails.copy(nino = TestConstants.testNino).ninoHash))
+
+    "if the nino hash is in session and it matches the nino in keystore" should {
+
+      "proceed normally" in {
+        setupMockKeystore(fetchAll = TestModels.testCacheMap)
+        val userDetails = TestModels.testUserDetails.copy(nino = TestConstants.testNino)
+        setupMockKeystore(fetchUserDetails = userDetails)
+        setupSubscribe()(subscribeSuccess)
+
+        val result = call(authenticatedNoNinoFakeRequest)
+
+        status(result) must be(Status.SEE_OTHER)
+        redirectLocation(result) mustBe Some(controllers.routes.ConfirmationController.showConfirmation().url)
+
         await(result)
+        verifyKeystore(fetchAll = 1, saveSubscriptionId = 1)
+      }
+
+    }
+
+    "if the nino hash is in session but it does not matches the nino in keystore" should {
+      "show internal server error" in {
+        setupMockKeystore(fetchAll = TestModels.testCacheMap)
+        setupSubscribe()(subscribeSuccess)
+        val userDetails = TestModels.testUserDetails.copy(nino = "differentNino")
+        setupMockKeystore(fetchUserDetails = userDetails)
+
+        val ex = intercept[InternalServerException](await(call(authenticatedNoNinoFakeRequest)))
+        ex.message mustBe "Cannot find the nino for the user"
+
         verifyKeystore(fetchAll = 1, saveSubscriptionId = 0)
       }
 

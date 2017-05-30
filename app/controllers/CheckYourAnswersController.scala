@@ -23,6 +23,7 @@ import config.BaseControllerConfig
 import connectors.models.subscription.FESuccessResponse
 import play.api.i18n.MessagesApi
 import services.{KeystoreService, SubscriptionService}
+import uk.gov.hmrc.play.http.InternalServerException
 
 import scala.concurrent.Future
 
@@ -32,7 +33,7 @@ class CheckYourAnswersController @Inject()(val baseConfig: BaseControllerConfig,
                                            val keystoreService: KeystoreService,
                                            val middleService: SubscriptionService,
                                            logging: Logging
-                                 ) extends BaseController {
+                                          ) extends BaseController {
 
   import services.CacheUtil._
 
@@ -54,18 +55,24 @@ class CheckYourAnswersController @Inject()(val baseConfig: BaseControllerConfig,
     implicit request =>
       keystoreService.fetchAll() flatMap {
         case Some(source) =>
-          val nino = user.nino.fold("")(x => x)
-          middleService.submitSubscription(nino, source.getSummary()).flatMap {
-            case Some(FESuccessResponse(Some(id))) =>
-              keystoreService.saveSubscriptionId(id).map(_ => Redirect(controllers.routes.ConfirmationController.showConfirmation()))
-            case _ =>
-              logging.warn("Successful response not received from submission")
-              Future.successful(InternalServerError("Submission failed"))
-          }
+          for {
+            nino <- keystoreService.getNino()
+              .collect { case Some(nino) => nino}
+              .recoverWith { case _ => error("Cannot find the nino for the user") }
+            mtditid <- middleService.submitSubscription(nino, source.getSummary())
+              .collect { case Some(FESuccessResponse(Some(id))) => id }
+              .recoverWith { case _ => error("Successful response not received from submission") }
+            cacheMap <- keystoreService.saveSubscriptionId(mtditid)
+              .recoverWith { case _ => error("Failed to save to keystore") }
+          } yield Redirect(controllers.routes.ConfirmationController.showConfirmation())
         case _ =>
-          logging.info("User attempted to submit 'Check Your Answers' without any keystore cached data")
-          Future.successful(InternalServerError)
+          error("User attempted to submit 'Check Your Answers' without any keystore cached data")
       }
+  }
+
+  def error(message: String): Future[Nothing] = {
+    logging.warn(message)
+    Future.failed(new InternalServerException(message))
   }
 
   lazy val backUrl: String = controllers.routes.TermsController.showTerms().url
