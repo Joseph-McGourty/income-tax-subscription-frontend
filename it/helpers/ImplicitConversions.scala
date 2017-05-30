@@ -14,24 +14,10 @@
  * limitations under the License.
  */
 
-package controllers
+package helpers
 
-import helpers.ComponentSpecBase
-import org.jsoup.Jsoup
-import play.api.http.Status
-import play.api.i18n.Messages
+import play.api.libs.json.{JsValue, Writes}
 
-class HomeControllerISpec extends ComponentSpecBase {
-  import IncomeTaxSubscriptionFrontend.startPage
-
-  "GET /" when {
-    "feature-switch.show-guidance is true" should {
-      "return the guidance page" in {
-        startPage() should have(
-          httpStatus(Status.OK),
-          pageTitle(Messages("frontpage.title"))
-        )
-      }
-    }
-  }
+object ImplicitConversions {
+  implicit def toJsValue[T](data: T)(implicit writer: Writes[T]): JsValue = writer.writes(data)
 }

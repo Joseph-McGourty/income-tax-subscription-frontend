@@ -16,7 +16,10 @@
 
 package helpers
 
+import java.util.UUID
+
 import models.DateModel
+import models.matching.UserDetailsModel
 import uk.gov.hmrc.domain.Generator
 
 object IntegrationTestConstants {
@@ -25,4 +28,14 @@ object IntegrationTestConstants {
   lazy val startDate = DateModel("05", "04", "2017")
   lazy val endDate = DateModel("04", "04", "2018")
   lazy val ggServiceName = "HMRC-MTD-IT"
+  val SessionId = s"stubbed-${UUID.randomUUID}"
+  val userId = "/auth/oid/1234567890"
+  val dateOfBirth = DateModel("01", "01", "1980")
+  val testUserDetails = UserDetailsModel(
+    "FirstName",
+    "LastName",
+    testNino,
+    dateOfBirth
+  )
+  val baseURI = "report-quarterly/income-and-expenses/sign-up"
 }

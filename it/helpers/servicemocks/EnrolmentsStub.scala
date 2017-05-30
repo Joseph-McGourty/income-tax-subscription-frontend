@@ -14,24 +14,23 @@
  * limitations under the License.
  */
 
-package controllers
+package helpers.servicemocks
 
-import helpers.ComponentSpecBase
-import org.jsoup.Jsoup
+import connectors.models.Enrolment
+import helpers.IntegrationTestConstants.{ggServiceName => _}
+import helpers.WiremockHelper
 import play.api.http.Status
-import play.api.i18n.Messages
+import play.api.libs.json.Json
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.Authority
 
-class HomeControllerISpec extends ComponentSpecBase {
-  import IncomeTaxSubscriptionFrontend.startPage
+object EnrolmentsStub {
+  object Enrolments {
+    def of(user: Authority): String = s"${user.uri}/enrolments"
+  }
 
-  "GET /" when {
-    "feature-switch.show-guidance is true" should {
-      "return the guidance page" in {
-        startPage() should have(
-          httpStatus(Status.OK),
-          pageTitle(Messages("frontpage.title"))
-        )
-      }
-    }
+  def stubNoEnrolments(uri: String): Unit = {
+    val enrolments: Seq[Enrolment] = Nil
+
+    WiremockHelper.stubGet(s"$uri/enrolments", Status.OK, Json.toJson(enrolments).toString)
   }
 }
