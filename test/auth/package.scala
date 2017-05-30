@@ -19,7 +19,7 @@ import java.util.UUID
 import config.AppConfig
 import controllers.ITSASessionKey
 import org.joda.time.{DateTime, DateTimeZone}
-import play.api.mvc.AnyContentAsEmpty
+import play.api.mvc.{AnyContent, AnyContentAsEmpty, Request}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.frontend.auth.connectors.domain
@@ -27,11 +27,12 @@ import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, Authority, Co
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, AuthenticationProviderIds}
 import uk.gov.hmrc.play.http.SessionKeys
 import uk.gov.hmrc.time.DateTimeUtils
+import utils.TestConstants
 
 package object auth {
 
   lazy val mockConfig: AppConfig = MockConfig
-  val nino = "AB124512C"
+  val nino = TestConstants.testNino
   lazy val authorisedUserAccounts = domain.Accounts(paye = Some(domain.PayeAccount(link = "/paye/abc", nino = Nino(nino))))
   lazy val noAuthorisedUserAccounts = domain.Accounts(paye = None)
 
@@ -101,7 +102,7 @@ package object auth {
 
     val userCL200NoAccounts: Authority =
       Authority(mockUpliftUserIdCL200NoAccounts,
-        Accounts(),
+        noAuthorisedUserAccounts,
         loggedInAt,
         previouslyLoggedInAt,
         CredentialStrength.Strong,
@@ -198,6 +199,7 @@ package object auth {
     FakeRequest().withSession(sessionVariables: _*)
   }
 
+  lazy val authenticatedNoNinoFakeRequest: FakeRequest[AnyContentAsEmpty.type] = authenticatedFakeRequest(userId = mockUpliftUserIdCL200NoAccounts)
 
   def timeoutFakeRequest(provider: String = AuthenticationProviderIds.GovernmentGatewayId,
                          userId: String = mockAuthorisedUserIdCL200): FakeRequest[AnyContentAsEmpty.type] =

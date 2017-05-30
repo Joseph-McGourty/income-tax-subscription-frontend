@@ -49,6 +49,8 @@ trait MockConfig extends AppConfig {
   override val enableCheckSubscription: Boolean = true
   override lazy val authenticatorUrl = ""
   override lazy val hasEnabledTestOnlyRoutes = false
+  override lazy val enableUserDetails: Boolean = true
+
 }
 
 object MockConfig extends MockConfig

@@ -16,10 +16,15 @@
 
 package auth
 
+import controllers.ITSASessionKey
 import play.api.http.Status
 import play.api.test.Helpers._
 import uk.gov.hmrc.play.frontend.auth.AuthenticationProviderIds
 import org.scalatest.Matchers._
+import play.api.i18n.MessagesApi
+import uk.gov.hmrc.play.frontend.controller.FrontendController
+
+import scala.concurrent.Future
 
 class AuthorisedForIncomeTaxSASpec extends MockAuthTestController {
 
@@ -57,7 +62,7 @@ class AuthorisedForIncomeTaxSASpec extends MockAuthTestController {
 
     lazy val result = AuthTestController.authorisedAsyncAction(authenticatedFakeRequest(AuthenticationProviderIds.GovernmentGatewayId, mockUpliftUserIdCL100))
 
-    "result in a status OK (200) redirect" in {
+    "result in a status OK (200)" in {
       status(result) shouldBe Status.OK
     }
   }
@@ -66,7 +71,7 @@ class AuthorisedForIncomeTaxSASpec extends MockAuthTestController {
 
     lazy val result = AuthTestController.authorisedAsyncAction(authenticatedFakeRequest(AuthenticationProviderIds.GovernmentGatewayId, mockUpliftUserIdCL50))
 
-    "result in a status OK (200) redirect" in {
+    "result in a status OK (200)" in {
       status(result) shouldBe Status.OK
     }
   }
@@ -117,6 +122,85 @@ class AuthorisedForIncomeTaxSASpec extends MockAuthTestController {
     lazy val result = AuthTestController.authorisedAsyncAction(authenticatedFakeRequest())
     "be allowed to proceed normally" in {
       status(result) shouldBe Status.OK // the OK is defined by authorisedAsyncAction
+    }
+  }
+
+  "When a user who logged in without a nino in auth hits a controller which implements AuthorisedForIncomeTaxSA" when {
+
+    def authTestController(setEnableUserDetails: Boolean, setCheckNino: Boolean) = new FrontendController with AuthorisedForIncomeTaxSA {
+      override val messagesApi: MessagesApi = app.injector.instanceOf[MessagesApi]
+      override lazy val applicationConfig =
+        new MockConfig {
+          override lazy val enableUserDetails: Boolean = setEnableUserDetails
+        }
+      override lazy val authConnector = TestAuthConnector
+      override lazy val enrolmentService = TestEnrolmentService
+      override lazy val postSignInRedirectUrl = "www.redirected.com"
+      override val checkNino: Boolean = setCheckNino
+
+      val authorisedAsyncAction = Authorised.async {
+        implicit user => implicit request => Future.successful(Ok)
+      }
+
+    }
+
+    "manual nino entry journey is enabled (enableUserDetails=true)" when {
+      "it is not a manual nino provider page (checkNino = true)" should {
+        s"bounce the user to ${controllers.matching.routes.UserDetailsController.show().url}" in {
+          lazy val result = authTestController(setEnableUserDetails = true, setCheckNino = true)
+            .authorisedAsyncAction(authenticatedNoNinoFakeRequest)
+          status(result) shouldBe Status.SEE_OTHER
+          redirectLocation(result).get shouldBe controllers.matching.routes.UserDetailsController.show().url
+        }
+      }
+
+      "it is not a manual nino provider page (checkNino = true) checkNino = true and there is a nino hash in session" should {
+        s"proceed with the specified action" in {
+          lazy val result = authTestController(setEnableUserDetails = true, setCheckNino = true)
+            .authorisedAsyncAction(authenticatedNoNinoFakeRequest.withSession(ITSASessionKey.NINO -> "anyValue"))
+          status(result) shouldBe Status.OK
+        }
+      }
+
+      "it is a manual nino provider page (checkNino = false)" should {
+        s"proceed with the specified action" in {
+          lazy val result = authTestController(setEnableUserDetails = true, setCheckNino = false)
+            .authorisedAsyncAction(authenticatedNoNinoFakeRequest)
+          status(result) shouldBe Status.OK
+        }
+      }
+
+      "it is a manual nino provider page (checkNino = false) and there is a nino hash in session" should {
+        s"bounce the user to ${controllers.routes.HomeController.index().url}" in {
+          lazy val result = authTestController(setEnableUserDetails = true, setCheckNino = false)
+            .authorisedAsyncAction(authenticatedNoNinoFakeRequest.withSession(ITSASessionKey.NINO -> "anyValue"))
+          status(result) shouldBe Status.SEE_OTHER
+          redirectLocation(result).get shouldBe controllers.routes.HomeController.index().url
+        }
+      }
+
+    }
+
+    "manual nino entry journey is disabled (enableUserDetails=false)" when {
+
+      "checkNino = true" should {
+        s"bounce take the user to ${controllers.routes.NoNinoController.showNoNino().url}" in {
+          lazy val result = authTestController(setEnableUserDetails = false, setCheckNino = true)
+            .authorisedAsyncAction(authenticatedNoNinoFakeRequest)
+          status(result) shouldBe Status.SEE_OTHER
+          redirectLocation(result).get shouldBe controllers.routes.NoNinoController.showNoNino().url
+        }
+      }
+
+      "checkNino = false" should {
+        s"bounce take the user to ${controllers.routes.NoNinoController.showNoNino().url}" in {
+          lazy val result = authTestController(setEnableUserDetails = false, setCheckNino = false)
+            .authorisedAsyncAction(authenticatedNoNinoFakeRequest)
+          status(result) shouldBe Status.SEE_OTHER
+          redirectLocation(result).get shouldBe controllers.routes.NoNinoController.showNoNino().url
+        }
+      }
+
     }
   }
 

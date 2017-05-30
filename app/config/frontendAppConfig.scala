@@ -52,6 +52,7 @@ trait AppConfig {
   val enableCheckSubscription: Boolean
   val authenticatorUrl: String
   val hasEnabledTestOnlyRoutes: Boolean
+  val enableUserDetails: Boolean
 }
 
 @Singleton
@@ -133,6 +134,8 @@ class FrontendAppConfig @Inject()(val app: Application) extends AppConfig with S
   */
   override lazy val hasEnabledTestOnlyRoutes: Boolean =
     configuration.getString("application.router").get == "testOnlyDoNotUseInAppConf.Routes"
+
+  override lazy val enableUserDetails: Boolean = loadConfig("feature-switch.enable-user-details").toBoolean
 
 }
 

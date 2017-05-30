@@ -24,12 +24,13 @@ import org.jsoup.Jsoup
 import play.api.http.Status
 import play.api.mvc.{Action, AnyContent}
 import play.api.test.Helpers._
-import services.mocks.{MockSubscriptionService, MockThrottlingService}
+import services.mocks.{MockKeystoreService, MockSubscriptionService, MockThrottlingService}
 
 
 class HomeControllerSpec extends ControllerBaseSpec
   with MockThrottlingService
-  with MockSubscriptionService {
+  with MockSubscriptionService
+  with MockKeystoreService {
 
   override val controllerName: String = "HomeControllerSpec"
 
@@ -51,6 +52,7 @@ class HomeControllerSpec extends ControllerBaseSpec
     messagesApi,
     TestThrottlingService,
     TestSubscriptionService,
+    MockKeystoreService,
     app.injector.instanceOf[Logging]
   )
 

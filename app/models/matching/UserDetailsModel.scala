@@ -16,15 +16,24 @@
 
 package models.matching
 
+import java.nio.charset.StandardCharsets
+
 import models._
-import utils.Implicits._
 import play.api.libs.json.Json
+import utils.Implicits._
 
 case class UserDetailsModel(firstName: String, lastName: String, nino: String, dateOfBirth: DateModel) {
 
   def ninoInBackendFormat: String = nino.toUpperCase.replace(" ", "")
 
   def ninoInDisplayFormat: String = nino.toNinoDisplayFormat
+
+  import java.security.MessageDigest
+
+  def ninoHash: String =
+    MessageDigest.getInstance("SHA-256")
+      .digest(ninoInBackendFormat.getBytes(StandardCharsets.UTF_8))
+      .map(x => (x & 0xff).formatted("%02x")).view.reduce(_ + _)
 
 }
 

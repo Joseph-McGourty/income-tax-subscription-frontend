@@ -19,12 +19,12 @@ package controllers.matching
 import javax.inject.{Inject, Singleton}
 
 import config.BaseControllerConfig
-import controllers.BaseController
+import controllers.{BaseController, ITSASessionKey}
 import models.matching.UserDetailsModel
 import play.api.i18n.MessagesApi
 import play.api.mvc.{Action, AnyContent, Request}
 import play.twirl.api.Html
-import services.{UserMatchingService, KeystoreService}
+import services.{KeystoreService, UserMatchingService}
 import utils.Implicits._
 
 @Singleton
@@ -32,7 +32,9 @@ class ConfirmDetailsController @Inject()(val baseConfig: BaseControllerConfig,
                                          val messagesApi: MessagesApi,
                                          val keystoreService: KeystoreService,
                                          val clientMatchingService: UserMatchingService
-                                       ) extends BaseController {
+                                        ) extends BaseController {
+
+  override val checkNino: Boolean = false
 
   def view(clientDetailsModel: UserDetailsModel)(implicit request: Request[_]): Html =
     views.html.matching.check_user_details(
@@ -57,8 +59,11 @@ class ConfirmDetailsController @Inject()(val baseConfig: BaseControllerConfig,
             matchFound <- clientMatchingService.matchClient(clientDetails)
           } yield matchFound
         }.flatMap {
-          case true => Redirect(controllers.routes.IncomeSourceController.showIncomeSource()) // TODO pending result from spike SAR-681, update auth?
-          case false => Redirect(controllers.matching.routes.UserDetailsErrorController.show())
+          // TODO pending the result of the spike SAR-681, make calls to update auth?
+          // the hash of the nino is put in the session so that controller predicates would not require to call keystore on every controller
+          case true => Redirect(controllers.routes.HomeController.index()).addingToSession(ITSASessionKey.NINO -> clientDetails.ninoHash)
+          // if for whatever reason the user managed to change the nino to an invalid entry then the session nino hash is removed
+          case false => Redirect(controllers.matching.routes.UserDetailsErrorController.show()).removingFromSession(ITSASessionKey.NINO)
         }
         // if there are no client details redirect them back to client details
         case _ => Redirect(routes.UserDetailsController.show())

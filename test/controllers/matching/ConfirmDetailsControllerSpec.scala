@@ -17,12 +17,15 @@
 package controllers.matching
 
 import auth._
-import controllers.ControllerBaseSpec
+import controllers.{ControllerBaseSpec, ITSASessionKey}
 import play.api.http.Status
-import play.api.mvc.{Action, AnyContent}
+import play.api.mvc._
+import play.api.test.FakeRequest
 import play.api.test.Helpers.{await, _}
-import services.mocks.{MockUserMatchingService, MockKeystoreService}
+import services.mocks.{MockKeystoreService, MockUserMatchingService}
 import utils.{TestConstants, TestModels}
+
+import scala.concurrent.Future
 
 class ConfirmDetailsControllerSpec extends ControllerBaseSpec
   with MockKeystoreService
@@ -43,12 +46,12 @@ class ConfirmDetailsControllerSpec extends ControllerBaseSpec
 
   "Calling the show action of the ConfirmDetailsController with an authorised user" should {
 
-    def call = TestConfirmDetailsController.show()(authenticatedFakeRequest())
+    def callShow(request: Request[AnyContent]) = TestConfirmDetailsController.show()(request)
 
     "when there are no client details store redirect them to client details" in {
       setupMockKeystore(fetchUserDetails = None)
 
-      val result = call
+      val result = callShow(authenticatedNoNinoFakeRequest)
 
       status(result) must be(Status.SEE_OTHER)
 
@@ -59,53 +62,102 @@ class ConfirmDetailsControllerSpec extends ControllerBaseSpec
 
     "if there is are client details return ok (200)" in {
       setupMockKeystore(fetchUserDetails = TestModels.testUserDetails)
-      val result = call
+      val result = callShow(authenticatedNoNinoFakeRequest)
 
       status(result) must be(Status.OK)
 
       await(result)
       verifyKeystore(fetchUserDetails = 1, saveUserDetails = 0)
     }
+
+    "If the user has a nino" when {
+      "The nino is in the auth" should {
+        s"bounce the user back to ${controllers.routes.HomeController.index().url}" in {
+          val result = callShow(authenticatedFakeRequest())
+          await(result)
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).get mustBe controllers.routes.HomeController.index().url
+        }
+      }
+
+      "The nino is in the session" should {
+        s"bounce the user back to ${controllers.routes.HomeController.index().url}" in {
+          val result = callShow(authenticatedNoNinoFakeRequest.withSession(ITSASessionKey.NINO -> "anyValue"))
+          await(result)
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).get mustBe controllers.routes.HomeController.index().url
+        }
+      }
+    }
   }
 
-  "Calling the submit action of the ConfirmDetailsController with an authorised user and valid submission" should {
+  "Calling the submit action of the ConfirmDetailsController with an authorised user and valid submission" when {
 
     val testNino = TestConstants.testNino
 
-    def callSubmit() = TestConfirmDetailsController.submit()(authenticatedFakeRequest())
+    def userDetail(nino: String) = TestModels.testUserDetails.copy(nino = nino)
 
-    "When a match has been found" should {
+    def ninoHash(nino: String) = userDetail(nino = nino).ninoHash
+
+    def newRequest(ninoInSession: Option[String] = None): FakeRequest[AnyContentAsEmpty.type] =
+      ninoInSession match {
+        case Some(oldNino) => authenticatedNoNinoFakeRequest.withSession(ITSASessionKey.NINO -> ninoHash(oldNino))
+        case _ => authenticatedNoNinoFakeRequest
+      }
+
+
+    def callSubmit(request: Request[AnyContent]) = TestConfirmDetailsController.submit()(request)
+
+    "a match has been found" should {
+
+      lazy val testRequest = newRequest()
+      lazy val testUserDetail = userDetail(testNino)
+
       "return a redirect status (SEE_OTHER)" in {
         setupMatchUser(matchUserMatched)
-        setupMockKeystore(fetchUserDetails = TestModels.testUserDetails)
+        setupMockKeystore(fetchUserDetails = testUserDetail)
 
-        val goodRequest = callSubmit()
+        val goodRequest = callSubmit(testRequest)
 
         status(goodRequest) must be(Status.SEE_OTHER)
 
+        val result = await(goodRequest)
+        verifyKeystore(fetchUserDetails = 1, saveUserDetails = 0)
+      }
+
+      s"redirect to '${controllers.routes.HomeController.index().url}" in {
+        setupMatchUser(matchUserMatched)
+        setupMockKeystore(fetchUserDetails = testUserDetail)
+
+        val goodRequest = callSubmit(testRequest)
+
+        redirectLocation(goodRequest) mustBe Some(controllers.routes.HomeController.index().url)
+
         await(goodRequest)
         verifyKeystore(fetchUserDetails = 1, saveUserDetails = 0)
       }
 
-      s"redirect to '${controllers.routes.IncomeSourceController.showIncomeSource().url}" in {
+      "The session is updated with the nino hash" in {
         setupMatchUser(matchUserMatched)
-        setupMockKeystore(fetchUserDetails = TestModels.testUserDetails)
+        setupMockKeystore(fetchUserDetails = testUserDetail)
 
-        val goodRequest = callSubmit()
+        val goodRequest = callSubmit(testRequest)
 
-        redirectLocation(goodRequest) mustBe Some(controllers.routes.IncomeSourceController.showIncomeSource().url)
-
-        await(goodRequest)
-        verifyKeystore(fetchUserDetails = 1, saveUserDetails = 0)
+        val result = await(goodRequest)
+        result.session(testRequest).get(ITSASessionKey.NINO) mustBe Some(ninoHash(testUserDetail.nino))
       }
     }
 
-    "When no match was been found" should {
+    "no match was been found" should {
+
+      lazy val testRequest = newRequest()
+      lazy val testUserDetail = userDetail(testNino)
+
       "return a redirect status (SEE_OTHER)" in {
         setupMatchUser(matchUserNoMatch)
-        setupMockKeystore(fetchUserDetails = TestModels.testUserDetails)
+        setupMockKeystore(fetchUserDetails = testUserDetail)
 
-        val goodRequest = callSubmit()
+        val goodRequest = callSubmit(testRequest)
 
         status(goodRequest) must be(Status.SEE_OTHER)
 
@@ -115,14 +167,24 @@ class ConfirmDetailsControllerSpec extends ControllerBaseSpec
 
       s"redirect to '${controllers.matching.routes.UserDetailsErrorController.show().url}" in {
         setupMatchUser(matchUserNoMatch)
-        setupMockKeystore(fetchUserDetails = TestModels.testUserDetails)
+        setupMockKeystore(fetchUserDetails = testUserDetail)
 
-        val goodRequest = callSubmit()
+        val goodRequest = callSubmit(testRequest)
 
         redirectLocation(goodRequest) mustBe Some(controllers.matching.routes.UserDetailsErrorController.show().url)
 
         await(goodRequest)
         verifyKeystore(fetchUserDetails = 1, saveUserDetails = 0)
+      }
+
+      "There should not be a nino hash in the session" in {
+        setupMatchUser(matchUserNoMatch)
+        setupMockKeystore(fetchUserDetails = testUserDetail)
+
+        val goodRequest = callSubmit(testRequest)
+
+        val result = await(goodRequest)
+        result.session(testRequest).get(ITSASessionKey.NINO) mustBe None
       }
     }
   }

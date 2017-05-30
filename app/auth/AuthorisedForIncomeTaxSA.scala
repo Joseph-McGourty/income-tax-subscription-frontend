@@ -18,7 +18,7 @@ package auth
 
 import config.AppConfig
 import connectors.models.Enrolment.{Enrolled, NotEnrolled}
-import controllers.ErrorPageRenderer
+import controllers.{ErrorPageRenderer, ITSASessionKey}
 import controllers.ITSASessionKey._
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import services.EnrolmentService
@@ -47,19 +47,39 @@ trait AuthorisedForIncomeTaxSA extends Actions with ErrorPageRenderer {
 
   // $COVERAGE-ON$
 
-  lazy val visibilityPredicate = new IncomeTaxSACompositePageVisibilityPredicate
+  // this boolean only comes into play if applicationConfig.enableUserDetails = true
+  // it is designed so the pages designed to enable user entry of nino do not have the no nino predicate
+  val checkNino: Boolean = true
+
+  lazy val visibilityPredicate = new IncomeTaxSACompositePageVisibilityPredicate(applicationConfig.enableUserDetails, checkNino)
+
+  // if the user has a nino defined in auth, or manually defined
+  private def hasNino(implicit authContext: AuthContext, request: Request[_]): Boolean =
+    authContext.principal.accounts.paye.fold(false)(_ => true) ||
+      request.session.get(ITSASessionKey.NINO).fold(false)(_ => true)
 
   class AuthorisedBy(regime: TaxRegime) {
-    val authedBy: AuthenticatedBy = AuthorisedFor(regime, visibilityPredicate)
+    lazy val authedBy: AuthenticatedBy = AuthorisedFor(regime, visibilityPredicate)
 
     def asyncCore(action: AsyncUserRequest): Action[AnyContent] =
-      authedBy.async { authContext: AuthContext =>
+      authedBy.async { implicit authContext: AuthContext =>
         implicit request =>
+          // check to see if the user has passed through the home controller successfully
+          // the GoHome token will only be added to session if the user has a valid nino be it from auth or manually entered
           request.session.get(GoHome) match {
+            // if (applicationConfig.enableUserDetails && !checkNino) then we are on a page for users to manually provide the nino
             case Some(_) =>
-              action(IncomeTaxSAUser(authContext))(request)
+              // if they have already supplied a nino then we should not allow access to the nino entry pages
+              (applicationConfig.enableUserDetails, checkNino, hasNino) match {
+                case (true, false, true) => Redirect(controllers.routes.HomeController.index())
+                case _ => action(IncomeTaxSAUser(authContext))(request)
+              }
             case None =>
-              Redirect(controllers.routes.HomeController.index())
+              (applicationConfig.enableUserDetails, checkNino, hasNino) match {
+                // if the session key for the nino hash exists then the user must have provided a nino
+                case (true, false, false) => action(IncomeTaxSAUser(authContext))(request)
+                case _ => Redirect(controllers.routes.HomeController.index())
+              }
           }
       }
 

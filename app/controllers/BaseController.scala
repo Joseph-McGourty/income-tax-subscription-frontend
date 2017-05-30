@@ -20,6 +20,7 @@ import auth.AuthorisedForIncomeTaxSA
 import config.BaseControllerConfig
 import play.api.data.Form
 import play.api.i18n.I18nSupport
+import play.api.mvc.{AnyContent, Request, Result}
 import uk.gov.hmrc.play.frontend.controller.FrontendController
 
 trait BaseController extends FrontendController with AuthorisedForIncomeTaxSA with I18nSupport {
@@ -32,6 +33,12 @@ trait BaseController extends FrontendController with AuthorisedForIncomeTaxSA wi
 
   implicit class FormUtil[T](form: Form[T]) {
     def fill(data: Option[T]): Form[T] = data.fold(form)(form.fill)
+  }
+
+  implicit class SessionUtil(result: Result) {
+    def removeNinoHash()(implicit request: Request[AnyContent]): Result = result.removingFromSession(ITSASessionKey.NINO)
+
+    def addNinoHash(nino: String)(implicit request: Request[AnyContent]): Result = result.addingToSession(ITSASessionKey.NINO -> nino)
   }
 
 }

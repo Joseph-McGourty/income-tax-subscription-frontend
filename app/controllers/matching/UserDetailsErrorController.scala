@@ -29,6 +29,8 @@ class UserDetailsErrorController @Inject()(val baseConfig: BaseControllerConfig,
                                            val messagesApi: MessagesApi
                                             ) extends BaseController {
 
+  override val checkNino: Boolean = false
+
   lazy val show: Action[AnyContent] = Authorised.async { implicit user =>
     implicit request =>
       Ok(views.html.matching.user_details_error(postAction = controllers.matching.routes.UserDetailsErrorController.submit()))

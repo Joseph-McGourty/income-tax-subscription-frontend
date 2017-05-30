@@ -19,9 +19,11 @@ package services
 
 import javax.inject._
 
+import controllers.ITSASessionKey
 import models._
 import models.matching.UserDetailsModel
 import play.api.libs.json.{Reads, Writes}
+import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.http.cache.client.{CacheMap, SessionCache}
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 
@@ -103,3 +105,23 @@ class KeystoreService @Inject()(val session: SessionCache) {
     save[UserDetailsModel](UserDetails, clientDetails)
 }
 
+object KeystoreService {
+
+  // n.b. this function was put in the utility class because we do not want to mock this as well
+  implicit class KeyStoreServiceUtil(keystoreService: KeystoreService) {
+
+    import utils.Implicits._
+    import scala.concurrent.ExecutionContext.Implicits.global
+
+    def fetchUserEnteredNino()(implicit request: Request[AnyContent], hc: HeaderCarrier, reads: Reads[UserDetailsModel]): Future[Option[String]] =
+    request.session.get(ITSASessionKey.NINO) match {
+      case Some(sessionHash) => keystoreService.fetchUserDetails().flatMap {
+        case Some(u: UserDetailsModel) =>
+          if (u.ninoHash == sessionHash) Some(u.ninoInBackendFormat)
+          else None
+      }
+      case _ => None
+    }
+  }
+
+}

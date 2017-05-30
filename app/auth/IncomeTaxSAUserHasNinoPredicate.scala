@@ -16,18 +16,24 @@
 
 package auth
 
-import play.api.mvc.Results._
+import controllers.ITSASessionKey
+import play.api.mvc.Results.{Redirect, _}
 import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.play.frontend.auth._
 
 import scala.concurrent.Future
 
-class IncomeTaxSAUserHasNinoPredicate extends PageVisibilityPredicate {
+class IncomeTaxSAUserHasNinoPredicate(enableUserDetails: Boolean) extends PageVisibilityPredicate {
   override def apply(authContext: AuthContext, request: Request[AnyContent]): Future[PageVisibilityResult] =
-    Future.successful(authContext.principal.accounts.paye match {
-      case Some(x) => PageIsVisible
+    Future.successful((authContext.principal.accounts.paye, request.session.get(ITSASessionKey.NINO)) match {
+      case (Some(_), _) | (_, Some(_)) => PageIsVisible
       case _ => PageBlocked(notEligible)
     })
 
-  private val notEligible = Future.successful(Redirect(controllers.routes.NoNinoController.showNoNino()))
+  private val notEligible =
+    Future.successful(Redirect(
+      if (enableUserDetails) controllers.matching.routes.UserDetailsController.show()
+      else controllers.routes.NoNinoController.showNoNino()
+    ))
+
 }

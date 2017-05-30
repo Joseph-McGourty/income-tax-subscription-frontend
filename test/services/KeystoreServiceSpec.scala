@@ -17,11 +17,14 @@
 package services
 
 import config.SessionCache
-import models.BusinessNameModel
+import controllers.ITSASessionKey
+import models.{BusinessNameModel, DateModel}
+import models.matching.UserDetailsModel
 import org.scalatest.Matchers._
 import services.mocks.MockKeystoreService
 import uk.gov.hmrc.play.http.HttpResponse
-import utils.{TestModels, UnitTestTrait}
+import utils.{TestConstants, TestModels, UnitTestTrait}
+import play.api.test.Helpers._
 
 class KeystoreServiceSpec extends UnitTestTrait
   with MockKeystoreService {
@@ -35,10 +38,11 @@ class KeystoreServiceSpec extends UnitTestTrait
     }
   }
 
+  object TestKeystore {
+    val keystoreService: KeystoreService = MockKeystoreService
+  }
+
   "mock keystore service" should {
-    object TestKeystore {
-      val keystoreService: KeystoreService = MockKeystoreService
-    }
 
     "configure and verify fetch and save business name as specified" in {
       val testBusinessName = BusinessNameModel("my business name")
@@ -80,6 +84,47 @@ class KeystoreServiceSpec extends UnitTestTrait
       }
     }
 
+  }
+
+  "KeyStoreServiceUtil.fetchUserEnteredNino" should {
+    val testNino = TestConstants.testNino
+    val testUserDetails = UserDetailsModel(
+      firstName = "",
+      lastName = "",
+      nino = testNino,
+      dateOfBirth = DateModel("01", "01", "1980")
+    )
+
+    lazy val requestNoNinoInSession = auth.authenticatedNoNinoFakeRequest
+    lazy val requestNinoInSession = auth.authenticatedNoNinoFakeRequest.withSession(ITSASessionKey.NINO -> testUserDetails.ninoHash)
+
+    "return None if there is no User Detail in keystore" in {
+      implicit val req = requestNoNinoInSession
+      setupMockKeystore(fetchUserDetails = None)
+      val r = TestKeystore.keystoreService.fetchUserEnteredNino()
+      await(r) shouldBe None
+    }
+
+    "return None if there is User Detail in keystore but there is no NINO hash in session" in {
+      implicit val req = requestNoNinoInSession
+      setupMockKeystore(fetchUserDetails = testUserDetails)
+      val r = TestKeystore.keystoreService.fetchUserEnteredNino()
+      await(r) shouldBe None
+    }
+
+    "return None if there is User Detail in keystore but it does not match the NINO hash in session" in {
+      implicit val req = requestNinoInSession.withSession(ITSASessionKey.NINO -> (testUserDetails.ninoHash + "1"))
+      setupMockKeystore(fetchUserDetails = testUserDetails)
+      val r = TestKeystore.keystoreService.fetchUserEnteredNino()
+      await(r) shouldBe None
+    }
+
+    "return the NINO if there is User Detail in keystore and it matches the NINO hash in session" in {
+      implicit val req = requestNinoInSession
+      setupMockKeystore(fetchUserDetails = testUserDetails)
+      val r = TestKeystore.keystoreService.fetchUserEnteredNino()
+      await(r) shouldBe Some(testNino)
+    }
   }
 
 }

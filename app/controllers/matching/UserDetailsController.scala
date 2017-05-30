@@ -24,7 +24,7 @@ import forms.matching.UserDetailsForm
 import models.matching.UserDetailsModel
 import play.api.data.Form
 import play.api.i18n.MessagesApi
-import play.api.mvc.{Action, AnyContent, Request}
+import play.api.mvc._
 import play.twirl.api.Html
 import services.KeystoreService
 
@@ -34,7 +34,9 @@ import scala.concurrent.Future
 class UserDetailsController @Inject()(val baseConfig: BaseControllerConfig,
                                       val messagesApi: MessagesApi,
                                       val keystoreService: KeystoreService
-                                       ) extends BaseController {
+                                     ) extends BaseController {
+
+  override val checkNino: Boolean = false
 
   def view(clientDetailsForm: Form[UserDetailsModel], isEditMode: Boolean)(implicit request: Request[_]): Html =
     views.html.matching.user_details(
@@ -58,5 +60,6 @@ class UserDetailsController @Inject()(val baseConfig: BaseControllerConfig,
           keystoreService.saveUserDetails(clientDetails).map(_ => Redirect(routes.ConfirmDetailsController.show()))
       )
   }
+
 
 }

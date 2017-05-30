@@ -18,16 +18,19 @@ package controllers.matching
 
 import assets.MessageLookup.{UserDetails => messages}
 import auth._
-import controllers.ControllerBaseSpec
+import controllers.{ControllerBaseSpec, ITSASessionKey}
 import forms.matching.UserDetailsForm
 import models.DateModel
 import models.matching.UserDetailsModel
 import org.jsoup.Jsoup
 import play.api.http.Status
-import play.api.mvc.{Action, AnyContent}
+import play.api.mvc._
+import play.api.test.FakeRequest
 import play.api.test.Helpers.{await, contentAsString, contentType, _}
 import services.mocks.MockKeystoreService
-import utils.TestConstants
+import utils.{TestConstants, TestModels}
+
+import scala.concurrent.Future
 
 
 class UserDetailsControllerSpec extends ControllerBaseSpec
@@ -45,9 +48,21 @@ class UserDetailsControllerSpec extends ControllerBaseSpec
     MockKeystoreService
   )
 
+  lazy val testNino: String = TestConstants.testNino
+
+  def userDetail(nino: String): UserDetailsModel = TestModels.testUserDetails.copy(nino = nino)
+
+  def ninoHash(nino: String): String = userDetail(nino = nino).ninoHash
+
+  def newRequest(ninoInSession: Option[String] = None): FakeRequest[AnyContentAsEmpty.type] =
+    ninoInSession match {
+      case Some(oldNino) => authenticatedNoNinoFakeRequest.withSession(ITSASessionKey.NINO -> ninoHash(oldNino))
+      case _ => authenticatedNoNinoFakeRequest
+    }
+
   "Calling the show action of the UserDetailsController with an authorised user" should {
 
-    lazy val result = TestUserDetailsController.show(isEditMode = false)(authenticatedFakeRequest())
+    lazy val result = TestUserDetailsController.show(isEditMode = false)(authenticatedNoNinoFakeRequest)
 
     "return ok (200)" in {
       setupMockKeystore(fetchUserDetails = None)
@@ -69,7 +84,34 @@ class UserDetailsControllerSpec extends ControllerBaseSpec
     }
   }
 
-  val testNino = TestConstants.testNino
+  "If the user has a nino" when {
+    for (editMode <- Seq(true, false)) {
+
+      s"editMode=$editMode" when {
+
+        def callShow(request: Request[AnyContent], isEditMode: Boolean): Future[Result] =
+          TestUserDetailsController.show(isEditMode = isEditMode)(request)
+
+        "The nino is in the auth" should {
+          s"bounce the user back to ${controllers.routes.HomeController.index().url}" in {
+            val result = callShow(authenticatedFakeRequest(), editMode)
+            await(result)
+            status(result) mustBe SEE_OTHER
+            redirectLocation(result).get mustBe controllers.routes.HomeController.index().url
+          }
+        }
+
+        "The nino is in the session" should {
+          s"bounce the user back to ${controllers.routes.HomeController.index().url}" in {
+            val result = callShow(authenticatedNoNinoFakeRequest.withSession(ITSASessionKey.NINO -> "anyValue"), editMode)
+            await(result)
+            status(result) mustBe SEE_OTHER
+            redirectLocation(result).get mustBe controllers.routes.HomeController.index().url
+          }
+        }
+      }
+    }
+  }
 
   for (editMode <- Seq(true, false)) {
 
@@ -79,7 +121,7 @@ class UserDetailsControllerSpec extends ControllerBaseSpec
 
         def callSubmit(isEditMode: Boolean) =
           TestUserDetailsController.submit(isEditMode = isEditMode)(
-            authenticatedFakeRequest()
+            authenticatedNoNinoFakeRequest
               .post(UserDetailsForm.userDetailsForm.form, UserDetailsModel(
                 firstName = "Abc",
                 lastName = "Abc",
@@ -114,7 +156,7 @@ class UserDetailsControllerSpec extends ControllerBaseSpec
 
         def callSubmit(isEditMode: Boolean) =
           TestUserDetailsController.submit(isEditMode = isEditMode)(
-            authenticatedFakeRequest()
+            authenticatedNoNinoFakeRequest
               .post(UserDetailsForm.userDetailsForm.form, UserDetailsModel(
                 firstName = "Abc",
                 lastName = "Abc",
@@ -140,7 +182,7 @@ class UserDetailsControllerSpec extends ControllerBaseSpec
           charset(badResult) must be(Some("utf-8"))
         }
 
-        "render the 'Not subscribed to Agent Services page'" in {
+        s"render the tite '${messages.title}'" in {
           val badResult = callSubmit(isEditMode = editMode)
           val document = Jsoup.parse(contentAsString(badResult))
           document.title mustBe messages.title

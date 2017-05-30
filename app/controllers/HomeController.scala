@@ -23,9 +23,10 @@ import auth.IncomeTaxSAUser
 import config.BaseControllerConfig
 import connectors.models.subscription.FESuccessResponse
 import connectors.models.throttling.CanAccess
+import models.matching.UserDetailsModel
 import play.api.i18n.MessagesApi
 import play.api.mvc.{Action, AnyContent, Request, Result}
-import services.{SubscriptionService, ThrottlingService}
+import services.{KeystoreService, SubscriptionService, ThrottlingService}
 import uk.gov.hmrc.play.http.InternalServerException
 import utils.Implicits._
 
@@ -36,6 +37,7 @@ class HomeController @Inject()(override val baseConfig: BaseControllerConfig,
                                override val messagesApi: MessagesApi,
                                throttlingService: ThrottlingService,
                                subscriptionService: SubscriptionService,
+                               keystoreService: KeystoreService,
                                logging: Logging
                               ) extends BaseController {
 
@@ -54,10 +56,19 @@ class HomeController @Inject()(override val baseConfig: BaseControllerConfig,
     baseConfig.applicationConfig.enableCheckSubscription match {
       case false => default
       case true =>
-        subscriptionService.getSubscription(user.nino.get).flatMap {
+        def callGetSubscription(nino: String) = subscriptionService.getSubscription(nino).flatMap {
           case Some(FESuccessResponse(None)) => default
           case Some(FESuccessResponse(Some(_))) => Redirect(controllers.routes.AlreadyEnrolledController.enrolled())
           case _ => showInternalServerError
+        }
+
+        user.nino match {
+          case Some(n) => callGetSubscription(n)
+          case _ =>
+            keystoreService.fetchUserEnteredNino flatMap {
+              case Some(nino) => callGetSubscription(nino)
+              case _ => showInternalServerError
+            }
         }
     }
 

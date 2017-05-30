@@ -18,10 +18,10 @@ package controllers.matching
 
 import assets.MessageLookup.{UserDetailsError => messages}
 import auth._
-import controllers.ControllerBaseSpec
+import controllers.{ControllerBaseSpec, ITSASessionKey}
 import org.jsoup.Jsoup
 import play.api.http.Status
-import play.api.mvc.{Action, AnyContent}
+import play.api.mvc.{Action, AnyContent, Request}
 import play.api.test.Helpers.{contentAsString, contentType, _}
 
 class UserDetailsErrorControllerSpec extends ControllerBaseSpec {
@@ -39,7 +39,9 @@ class UserDetailsErrorControllerSpec extends ControllerBaseSpec {
 
   "Calling the 'show' action of the UserDetailsErrorController" should {
 
-    lazy val result = TestUserDetailsErrorController.show(authenticatedFakeRequest())
+    def callShow(request: Request[AnyContent]) = TestUserDetailsErrorController.show(request)
+
+    lazy val result = callShow(authenticatedNoNinoFakeRequest)
     lazy val document = Jsoup.parse(contentAsString(result))
 
     "return 200" in {
@@ -59,11 +61,30 @@ class UserDetailsErrorControllerSpec extends ControllerBaseSpec {
       document.select("#sign-out").attr("href") mustBe controllers.routes.SignOutController.signOut().url
     }
 
+    "If the user has a nino" when {
+      "The nino is in the auth" should {
+        s"bounce the user back to ${controllers.routes.HomeController.index().url}" in {
+          val result = callShow(authenticatedFakeRequest())
+          await(result)
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).get mustBe controllers.routes.HomeController.index().url
+        }
+      }
+
+      "The nino is in the session" should {
+        s"bounce the user back to ${controllers.routes.HomeController.index().url}" in {
+          val result = callShow(authenticatedNoNinoFakeRequest.withSession(ITSASessionKey.NINO -> "anyValue"))
+          await(result)
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).get mustBe controllers.routes.HomeController.index().url
+        }
+      }
+    }
   }
 
   "Calling the 'submit' action of the UserDetailsErrorController" should {
 
-    lazy val result = TestUserDetailsErrorController.submit(authenticatedFakeRequest())
+    lazy val result = TestUserDetailsErrorController.submit(authenticatedNoNinoFakeRequest)
 
     "return 303" in {
       status(result) must be(Status.SEE_OTHER)

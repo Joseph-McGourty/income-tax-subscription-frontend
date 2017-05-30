@@ -16,12 +16,12 @@
 
 package auth
 
-import java.net.{URI, URLEncoder}
-
 import uk.gov.hmrc.play.frontend.auth.{CompositePageVisibilityPredicate, PageVisibilityPredicate}
 
-class IncomeTaxSACompositePageVisibilityPredicate extends CompositePageVisibilityPredicate {
-  override def children: Seq[PageVisibilityPredicate] = Seq(
-    new IncomeTaxSAUserHasNinoPredicate
-  )
+class IncomeTaxSACompositePageVisibilityPredicate(enableUserDetails: Boolean, checkNino: Boolean) extends CompositePageVisibilityPredicate {
+
+  override def children: Seq[PageVisibilityPredicate] =
+    if (enableUserDetails && !checkNino) Seq.empty
+    else Seq(new IncomeTaxSAUserHasNinoPredicate(enableUserDetails))
+
 }
